@@ -4,21 +4,21 @@ import {checkForDuplicates, eachWithObject, shuffleArray} from "./helpers";
 import {layoutSchedule} from "./logic";
 
 export const SPECIAL_CELLS = {
-    OOF: 'OOF',
-    LUNCH: 'LUNCH',
-    EARLY_RELEASE: 'EARLY_RELEASE',
-    EVENTS: 'EVENTS'
+    OOF: { text: 'OOF', fullWidth: true, color: '#aaa' },
+    LUNCH: { text: 'LUNCH', fullWidth: true, color: '#aaa' },
+    EARLY_RELEASE: { text: 'EARLY RELEASE', group: 'EARLY_RELEASE', fullWidth: true, color: '#ddd' },
+    EVENTS: { text: 'EVENTS', group: 'EVENTS', fullWidth: true, color: '#888' }
 }
 
-// blockGrades accounted for canPutClassInSlot
+// blockGradeIds accounted for canPutClassInSlot
 export const periods = [
-    { id: 'PER 1', timeRange: '8:10 - 8:55', blockGrades: [], lunch: false },
-    { id: 'PER 2', timeRange: '9:00 - 9:45', blockGrades: [], lunch: false },
-    { id: 'PER 3', timeRange: '10:05 - 10:50', blockGrades: [], lunch: false },
-    { id: 'PER 4', timeRange: '10:55 - 11:40', blockGrades: ['P','K','1','2'], lunch: true },
-    { id: 'Specials Lunch', timeRange: '11:45 - 12:25', blockGrades: ['3','4','5','6'], lunch: true },
-    { id: 'PER 5', timeRange: '12:30 - 1:15', blockGrades: [], lunch: false },
-    { id: 'PER 6', timeRange: '1:20 - 2:05', blockGrades: [], lunch: false },
+    { id: 'PER 1', timeRange: '8:10 - 8:55', blockGradeIds: [], lunch: false },
+    { id: 'PER 2', timeRange: '9:00 - 9:45', blockGradeIds: [], lunch: false },
+    { id: 'PER 3', timeRange: '10:05 - 10:50', blockGradeIds: [], lunch: false },
+    { id: 'PER 4', timeRange: '10:55 - 11:40', blockGradeIds: ['P','K','1','2'], lunch: true },
+    { id: 'Specials Lunch', timeRange: '11:45 - 12:25', blockGradeIds: ['3','4','5','6'], lunch: true },
+    { id: 'PER 5', timeRange: '12:30 - 1:15', blockGradeIds: [], lunch: false },
+    { id: 'PER 6', timeRange: '1:20 - 2:05', blockGradeIds: [], lunch: false },
 ];
 
 export const dows = [
@@ -30,28 +30,28 @@ export const dows = [
 ]
 
 export let grades = [
-    // { id: 'P', color: 'lightpink', classes: ['P1'] },
-    { id: 'K', color: 'indianred', classes: ['A1', 'A4', 'A5', 'A6'] },
-    { id: '1', color: 'gold', classes: ['C2', 'C3', 'C4', 'C5'] },
-    { id: '2', color: 'darkorange', classes: ['B2', 'B3', 'B4', 'B5'] },
-    { id: '3', color: 'olivedrab', classes: ['B24', 'B25', 'B26'] },
-    { id: '4', color: 'mediumpurple', classes: ['C24', 'C25', 'C26'] },
-    { id: '5', color: 'plum', classes: ['C21', 'C22', 'C23'] },
-    { id: '6', color: 'aqua', classes: ['B21', 'B22', 'B23'] },
+    // { id: 'P', color: 'lightpink', classIds: ['P1'] },
+    { id: 'K', color: 'indianred', classIds: ['A1', 'A4', 'A5', 'A6'] },
+    { id: '1', color: 'gold', classIds: ['C2', 'C3', 'C4', 'C5'] },
+    { id: '2', color: 'darkorange', classIds: ['B2', 'B3', 'B4', 'B5'] },
+    { id: '3', color: 'olivedrab', classIds: ['B24', 'B25', 'B26'] },
+    { id: '4', color: 'mediumpurple', classIds: ['C24', 'C25', 'C26'] },
+    { id: '5', color: 'plum', classIds: ['C21', 'C22', 'C23'] },
+    { id: '6', color: 'aqua', classIds: ['B21', 'B22', 'B23'] },
 ];
 grades.forEach(grade => {
-    grade.classes = grade.classes.map(classId => `${classId} (${grade.id})`);
+    grade.classIds = grade.classIds.map(classId => `${classId} (${grade.id})`);
 });
 
-// blockDows accounted for in result, blockGrades accounted for in remaining
+// blockDowIds accounted for in result, blockGradeIds accounted for in remaining
 export let subjects = [
-    { id: 'K-2 ART', blockDows: ['M','F'], blockGrades: ['3','4','5','6'] },
-    { id: '3-6 ART', blockDows: ['R','F'], blockGrades: ['P','K','1','2'] },
-    { id: 'MUSIC', blockDows: [], blockGrades: [] },
-    { id: 'PE', blockDows: [], blockGrades: [] },
-    { id: 'LIBRARY', blockDows: [], blockGrades: [] },
-    { id: 'LANGUAGE', blockDows: [], blockGrades: [] },
-    { id: 'SPECIAL', blockDows: ['M'], blockGrades: [] }, // TODO forces special to a single day
+    { id: 'K-2 ART', blockDowIds: ['M','F'], blockGradeIds: ['3','4','5','6'] },
+    { id: '3-6 ART', blockDowIds: ['R','F'], blockGradeIds: ['P','K','1','2'] },
+    { id: 'MUSIC', blockDowIds: [], blockGradeIds: [] },
+    { id: 'PE', blockDowIds: [], blockGradeIds: [] },
+    { id: 'LIBRARY', blockDowIds: [], blockGradeIds: [] },
+    { id: 'LANGUAGE', blockDowIds: [], blockGradeIds: [] },
+    { id: 'SPECIAL', blockDowIds: ['M'], blockGradeIds: [] }, // TODO forces special to a single day
 ];
 
 export let dowPriority = ['T','W','R','M','F'];
@@ -93,11 +93,10 @@ function initLookups() {
 
     classLookup = {};
     grades.forEach(grade => {
-        grade.classes.forEach(klass => {
-            classLookup[klass] = {
-                id: klass,
-                gradeId: grade.id,
-                gradeColor: grade.color
+        grade.classIds.forEach(classId => {
+            classLookup[classId] = {
+                id: classId,
+                gradeId: grade.id
             }
         })
     });
@@ -116,7 +115,7 @@ function initResult() {
         periods.forEach(period => {
             let periodResult = [];
             subjects.forEach(subject => {
-                periodResult.push(subject.blockDows.includes(dow.id) ? SPECIAL_CELLS.OOF : null);
+                periodResult.push(subject.blockDowIds.includes(dow.id) ? SPECIAL_CELLS.OOF : null);
             });
             dowResult.push(periodResult);
         });
@@ -129,8 +128,8 @@ function initRemaining() {
     remaining = {};
     grades.forEach(grade => {
         subjects.forEach(subject => {
-            grade.classes.forEach(classId => {
-                if (!subject.blockGrades.includes(grade.id)) {
+            grade.classIds.forEach(classId => {
+                if (!subject.blockGradeIds.includes(grade.id)) {
                     addRemaining(grade.id, subject.id, classId);
                 }
             })
@@ -168,9 +167,9 @@ function validateInputs() {
     if (checkForDuplicates(grades.map(grade => grade.color))) {
         console.error("Duplicate grade colors found");
     }
-    let allClasses = [];
-    grades.forEach(grade => grade.classes.forEach(klass => allClasses.push(klass)));
-    if (checkForDuplicates(allClasses)) {
+    let allClassIds = [];
+    grades.forEach(grade => grade.classIds.forEach(classId => allClassIds.push(classId)));
+    if (checkForDuplicates(allClassIds)) {
         console.error("Duplicates class ids found");
     }
     if (checkForDuplicates(subjects.map(subject => subject.id))) {

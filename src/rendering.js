@@ -5,6 +5,8 @@ import {classLookup, dows, SPECIAL_CELLS, periods, remaining, result, subjects} 
 const $table = $('#output-table');
 const $remaining = $('#remaining');
 
+const showGroups = true;
+
 export function renderTable() {
     $table.empty();
 
@@ -15,46 +17,80 @@ export function renderTable() {
     dows.forEach(dow => {
         $('<th>', {
             html: dow.name,
-            "class": "dow-header"
+            "class": "dow-header",
+            colspan: showGroups ? 2 : 1
         }).appendTo($tr);
     })
 
     const $tbody = $('<tbody>').appendTo($table);
-
     periods.forEach((period, periodIndex) => {
         subjects.forEach((subject, subjectIndex) => {
-            let cellClasses = [];
+            let cellClasses = new Set(['dow-cell']);
             if (subjectIndex === 0) {
-                cellClasses.push('period-border');
+                cellClasses.add('period-border');
             }
 
             $tr = $('<tr>').appendTo($tbody);
-            $('<td>', { html: period.id, "class": cellClasses }).appendTo($tr);
-            $('<td>', { html: subject.id, "class": cellClasses }).appendTo($tr);
+            createTd({text: period.id}, cellClasses).appendTo($tr);
+            createTd({text: subject.id}, cellClasses).appendTo($tr);
             dows.forEach((dow, dowIndex) => {
                 let cell = result[dowIndex][periodIndex][subjectIndex];
-                if (cell === SPECIAL_CELLS.OOF) {
-                    $('<td>', { html: 'OOF', style: 'background-color:grey;', "class": cellClasses }).appendTo($tr);
+
+                let isGroup = cell && cell.group;
+                let startOfGroup = false;
+                let groupSize = 0;
+                if (isGroup) {
+                    for (let i = 0; i < subjects.length; i++) {
+                        let otherCell = result[dowIndex][periodIndex][i];
+                        if (otherCell && otherCell.group === cell.group) {
+                            if (groupSize === 0) {
+                                startOfGroup = subjectIndex === i;
+                            }
+                            groupSize++;
+                        }
+                    }
                 }
-                else if (cell === SPECIAL_CELLS.LUNCH) {
-                    $('<td>', { html: 'LUNCH', style: 'background-color:grey;', "class": cellClasses }).appendTo($tr);
-                }
-                else if (cell === SPECIAL_CELLS.EARLY_RELEASE) {
-                    $('<td>', { html: 'EARLY RELEASE', style: 'background-color:#ddd;', "class": cellClasses }).appendTo($tr);
-                }
-                else if (cell === SPECIAL_CELLS.EVENTS) {
-                    $('<td>', { html: 'EVENTS', style: 'background-color:#ddd;', "class": cellClasses }).appendTo($tr);
-                }
-                else if (classLookup[cell]) {
-                    let klass = classLookup[cell];
-                    $('<td>', { html: klass.id, style: `background-color:${klass.gradeColor};`, "class": cellClasses }).appendTo($tr);
+
+                !showGroups && isGroup ? cellClasses.add('bold') : cellClasses.delete('bold');
+
+                if (isGroup && cell.fullWidth) {
+                    if (startOfGroup) {
+                        createTd(cell, cellClasses, groupSize).appendTo($tr);
+                    }
+                    // Do not create cells if not startOfGroup
                 }
                 else {
-                    $('<td>', { html: '', "class": cellClasses }).appendTo($tr);
+                    createTd(cell, cellClasses).appendTo($tr);
+
+                    if (cell && cell.fullWidth) { return; }
+                    if (!showGroups) { return; }
+
+                    if (isGroup) {
+                        if (startOfGroup) {
+                            createTd({
+                                text: cell.group,
+                                color: cell.color
+                            }, cellClasses, groupSize).appendTo($tr);
+                        }
+                        // Do not create cells if not startOfGroup
+                    }
+                    else {
+                        createTd({text: ''}, cellClasses).appendTo($tr);
+                    }
                 }
             })
         });
     })
+}
+
+function createTd(cell, classSet, rowspan) {
+    return $('<td>', {
+        html: cell ? cell.text : '',
+        style: cell && cell.color ? `background-color:${cell.color};` : undefined,
+        "class": [...classSet].join(' '),
+        colspan: cell && cell.fullWidth && showGroups ? 2 : undefined,
+        rowspan: rowspan
+    });
 }
 
 export function renderRemaining() {

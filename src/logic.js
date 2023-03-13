@@ -47,18 +47,19 @@ function applyGradeLevelMeetings() {
             iteratePeriods(period => {
                 if (foundGradeMatch) { return; }
 
-                for (let offset = 0; offset <= subjects.length - grade.classes.length; offset++) {
-                    let perms = permutations(grade.classes);
+                for (let offset = 0; offset <= subjects.length - grade.classIds.length; offset++) {
+                    let perms = permutations(grade.classIds);
+                    let group = `Grade ${grade.id}<br> ARTIC`;
 
                     perms.forEach(perm1 => {
                         if (foundGradeMatch) { return; }
 
                         if (permutationMatches(perm1, offset, dow, period.index)) {
-                            applyPermutation(perm1, offset, dow, period.index);
+                            applyPermutation(perm1, offset, dow, period.index, group);
                             perms.forEach(perm2 => {
                                 if (foundGradeMatch) { return; }
                                 if (permutationMatches(perm2, offset, dow, period.index + 1)) {
-                                    applyPermutation(perm2, offset, dow, period.index + 1);
+                                    applyPermutation(perm2, offset, dow, period.index + 1, group);
                                     // console.log(`placed ${grade.id} in ${period.index} / ${period.index+1}`)
                                     foundGradeMatch = true;
                                 }
@@ -88,10 +89,10 @@ function permutationMatches(permutation, offset, dow, periodIndex) {
     });
 }
 
-function applyPermutation(permutation, offset, dow, periodIndex) {
+function applyPermutation(permutation, offset, dow, periodIndex, group) {
     permutation.forEach((classId, subjectOffset) => {
         let subjectIndex = offset + subjectOffset;
-        putClassInSlot(classLookup[classId], dow, periods[periodIndex], subjects[subjectIndex])
+        putClassInSlot(classLookup[classId], dow, periods[periodIndex], subjects[subjectIndex], group)
     });
 }
 
@@ -144,14 +145,14 @@ function canPutClassInSlot(klass, dow, period, subject) {
         return false;
     }
 
-    if (period.blockGrades.includes(klass.gradeId)) {
+    if (period.blockGradeIds.includes(klass.gradeId)) {
         return false;
     }
 
     // class must not be doing something else at this time
     let classInUse = false;
     result[dow.index][period.index].forEach(slot => {
-        if (slot === klass.id) {
+        if (slot && slot.classId === klass.id) {
             classInUse = true;
         }
     });
@@ -177,8 +178,13 @@ function canPutClassInSlot(klass, dow, period, subject) {
     return result[dow.index][period.index][subject.index] === null;
 }
 
-function putClassInSlot(klass, dow, period, subject) {
-    result[dow.index][period.index][subject.index] = klass.id;
+function putClassInSlot(klass, dow, period, subject, group) {
+    result[dow.index][period.index][subject.index] = {
+        text: klass.id,
+        classId: klass.id,
+        color: gradeLookup[klass.gradeId].color,
+        group: group
+    };
     removeRemaining(klass.gradeId, subject.id, klass.id);
 }
 function removeClassInSlot(klass, dow, period, subject) {

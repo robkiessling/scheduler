@@ -3,6 +3,10 @@ html {
   font-family: Arial, sans-serif;
 }
 
+.bold {
+  font-weight: bold;
+}
+
 #output {
   display: flex;
 
@@ -28,6 +32,9 @@ html {
       }
       td.period-border {
         border-top: 2px solid black;
+      }
+      td.dow-cell {
+        min-width: 50px;
       }
     }
   }
