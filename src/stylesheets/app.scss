@@ -2,3 +2,39 @@
 #hello-world {
   color: green;
 }
+
+#output {
+  display: flex;
+
+  #output-table-container {
+    flex: 1 1 auto ;
+
+    #output-table {
+
+      border-collapse: collapse;
+
+      th, td {
+        border: 1px solid #ddd;
+        padding: 2px 8px;
+      }
+
+      th.dow-header {
+        min-width: 80px;
+      }
+      td.period-border {
+        border-top: 2px solid black;
+      }
+    }
+  }
+
+  #remaining {
+    flex-shrink: 0;
+
+    width: 400px;
+    margin-left: 20px;
+    background: #eee;
+    padding: 8px;
+    font-size: 0.875rem;
+  }
+}
+
