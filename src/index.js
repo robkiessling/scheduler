@@ -1,10 +1,16 @@
 import './stylesheets/app.scss'
 import {renderRemaining, renderTable} from './rendering';
-import {checkForDuplicates} from "./helpers";
+import {checkForDuplicates, eachWithObject, shuffleArray} from "./helpers";
+import {layoutSchedule} from "./logic";
 
-export const OOF = 'OOF'
-export const LUNCH = 'LUNCH'
+export const SPECIAL_CELLS = {
+    OOF: 'OOF',
+    LUNCH: 'LUNCH',
+    EARLY_RELEASE: 'EARLY_RELEASE',
+    EVENTS: 'EVENTS'
+}
 
+// blockGrades accounted for canPutClassInSlot
 export const periods = [
     { id: 'PER 1', timeRange: '8:10 - 8:55', blockGrades: [], lunch: false },
     { id: 'PER 2', timeRange: '9:00 - 9:45', blockGrades: [], lunch: false },
@@ -33,7 +39,11 @@ export let grades = [
     { id: '5', color: 'plum', classes: ['C21', 'C22', 'C23'] },
     { id: '6', color: 'aqua', classes: ['B21', 'B22', 'B23'] },
 ];
+grades.forEach(grade => {
+    grade.classes = grade.classes.map(classId => `${classId} (${grade.id})`);
+});
 
+// blockDows accounted for in result, blockGrades accounted for in remaining
 export let subjects = [
     { id: 'K-2 ART', blockDows: ['M','F'], blockGrades: ['3','4','5','6'] },
     { id: '3-6 ART', blockDows: ['R','F'], blockGrades: ['P','K','1','2'] },
@@ -41,15 +51,63 @@ export let subjects = [
     { id: 'PE', blockDows: [], blockGrades: [] },
     { id: 'LIBRARY', blockDows: [], blockGrades: [] },
     { id: 'LANGUAGE', blockDows: [], blockGrades: [] },
-    { id: 'SPECIAL', blockDows: ['M','T','W','F'], blockGrades: [] }, // TODO forces special to a single day
+    { id: 'SPECIAL', blockDows: ['M'], blockGrades: [] }, // TODO forces special to a single day
 ];
 
-export let dayPriority = ['T','W','R','M','F'];
-export let periodPriority = ['PER 6','PER 5','Specials Lunch','PER 4','PER 3','PER 2','PER 1'];
+export let dowPriority = ['T','W','R','M','F'];
+// export let periodPriority = ['PER 6','PER 5','Specials Lunch','PER 4','PER 3','PER 2','PER 1'];
+export let periodPriority = ['PER 6','PER 5','PER 4','PER 3','PER 2','PER 1','Specials Lunch'];
+
+// TODO just setting biggest to smallest
+// TODO Putting K last, so other grades can fill T/W/R morning first
+export let gradePriority = ['2','1','K','3','4','5','6']; // causes an ARTIC on monday
+// export let gradePriority = ['3','4','5','6','2','1','K'];
+shuffleArray(gradePriority);
 
 export let result;
 export let remaining;
+
+export let periodLookup;
+export let dowLookup;
+export let gradeLookup;
 export let classLookup;
+export let subjectLookup;
+
+function initIndexes() {
+    initIndex(periods);
+    initIndex(dows);
+    initIndex(grades);
+    initIndex(subjects);
+}
+function initIndex(array) {
+    array.forEach((record, index) => {
+        record.index = index;
+    })
+}
+
+function initLookups() {
+    periodLookup = createLookup(periods);
+    dowLookup = createLookup(dows);
+    gradeLookup = createLookup(grades);
+    subjectLookup = createLookup(subjects);
+
+    classLookup = {};
+    grades.forEach(grade => {
+        grade.classes.forEach(klass => {
+            classLookup[klass] = {
+                id: klass,
+                gradeId: grade.id,
+                gradeColor: grade.color
+            }
+        })
+    });
+}
+
+function createLookup(array) {
+    return eachWithObject(array, {}, (record, lookup) => {
+        lookup[record.id] = record;
+    });
+}
 
 function initResult() {
     result = [];
@@ -58,7 +116,7 @@ function initResult() {
         periods.forEach(period => {
             let periodResult = [];
             subjects.forEach(subject => {
-                periodResult.push(subject.blockDows.includes(dow.id) ? OOF : null);
+                periodResult.push(subject.blockDows.includes(dow.id) ? SPECIAL_CELLS.OOF : null);
             });
             dowResult.push(periodResult);
         });
@@ -68,31 +126,34 @@ function initResult() {
 }
 
 function initRemaining() {
-    remaining = [];
+    remaining = {};
     grades.forEach(grade => {
         subjects.forEach(subject => {
-            grade.classes.forEach(klass => {
+            grade.classes.forEach(classId => {
                 if (!subject.blockGrades.includes(grade.id)) {
-                    remaining.push({ grade: grade.id, subject: subject.id, "class": klass })
+                    addRemaining(grade.id, subject.id, classId);
                 }
             })
         });
     });
     console.log(remaining);
 }
-function initClassLookup() {
-    classLookup = {};
-    grades.forEach(grade => {
-        grade.classes.forEach(klass => {
-            classLookup[klass] = {
-                id: klass,
-                grade: grade.id,
-                gradeColor: grade.color
-            }
-        })
-    });
+function remainingKey(gradeId, subjectId, classId) {
+    return `${gradeId}.${subjectId}.${classId}`
 }
-
+export function isRemaining(gradeId, subjectId, classId) {
+    return remaining[remainingKey(gradeId, subjectId, classId)] !== undefined;
+}
+export function removeRemaining(gradeId, subjectId, classId) {
+    delete remaining[remainingKey(gradeId, subjectId, classId)]
+}
+export function addRemaining(gradeId, subjectId, classId) {
+    remaining[remainingKey(gradeId, subjectId, classId)] = {
+        grade: gradeId,
+        subject: subjectId,
+        "class": classId
+    };
+}
 
 function validateInputs() {
     if (checkForDuplicates(periods.map(period => period.id))) {
@@ -115,7 +176,7 @@ function validateInputs() {
     if (checkForDuplicates(subjects.map(subject => subject.id))) {
         console.error("Duplicate subject ids found");
     }
-    dayPriority.forEach(dow => checkForeignKey(dow, dows));
+    dowPriority.forEach(dow => checkForeignKey(dow, dows));
     periodPriority.forEach(period => checkForeignKey(period, periods));
 }
 
@@ -127,8 +188,12 @@ function checkForeignKey(id, table) {
 }
 
 validateInputs();
+initIndexes();
+initLookups();
 initResult();
 initRemaining();
-initClassLookup();
+// renderRemaining();
+layoutSchedule();
+console.log('final: ', result);
 renderTable();
 renderRemaining();

@@ -1,6 +1,6 @@
 
 import $ from "jquery";
-import {classLookup, dows, LUNCH, OOF, periods, remaining, result, subjects} from "./index";
+import {classLookup, dows, SPECIAL_CELLS, periods, remaining, result, subjects} from "./index";
 
 const $table = $('#output-table');
 const $remaining = $('#remaining');
@@ -33,11 +33,17 @@ export function renderTable() {
             $('<td>', { html: subject.id, "class": cellClasses }).appendTo($tr);
             dows.forEach((dow, dowIndex) => {
                 let cell = result[dowIndex][periodIndex][subjectIndex];
-                if (cell === OOF) {
+                if (cell === SPECIAL_CELLS.OOF) {
                     $('<td>', { html: 'OOF', style: 'background-color:grey;', "class": cellClasses }).appendTo($tr);
                 }
-                else if (cell === LUNCH) {
+                else if (cell === SPECIAL_CELLS.LUNCH) {
                     $('<td>', { html: 'LUNCH', style: 'background-color:grey;', "class": cellClasses }).appendTo($tr);
+                }
+                else if (cell === SPECIAL_CELLS.EARLY_RELEASE) {
+                    $('<td>', { html: 'EARLY RELEASE', style: 'background-color:#ddd;', "class": cellClasses }).appendTo($tr);
+                }
+                else if (cell === SPECIAL_CELLS.EVENTS) {
+                    $('<td>', { html: 'EVENTS', style: 'background-color:#ddd;', "class": cellClasses }).appendTo($tr);
                 }
                 else if (classLookup[cell]) {
                     let klass = classLookup[cell];
@@ -54,9 +60,9 @@ export function renderTable() {
 export function renderRemaining() {
     $remaining.empty();
 
-    remaining.forEach(remain => {
+    for (let [remainsId, remains] of Object.entries(remaining)) {
         $('<span>', {
-            html: JSON.stringify(remain)
+            html: JSON.stringify(remains)
         }).appendTo($remaining);
-    })
+    }
 }

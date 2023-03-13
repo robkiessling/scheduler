@@ -1,6 +1,6 @@
 
-#hello-world {
-  color: green;
+html {
+  font-family: Arial, sans-serif;
 }
 
 #output {
@@ -10,16 +10,21 @@
     flex: 1 1 auto ;
 
     #output-table {
+      font-size: 0.875rem;
 
       border-collapse: collapse;
 
       th, td {
         border: 1px solid #ddd;
-        padding: 2px 8px;
+        //padding: 2px 8px;
+        padding: 0 8px;
       }
 
+      td {
+        text-align: center;
+      }
       th.dow-header {
-        min-width: 80px;
+        min-width: 100px;
       }
       td.period-border {
         border-top: 2px solid black;
