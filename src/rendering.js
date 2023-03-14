@@ -1,6 +1,6 @@
 
 import $ from "jquery";
-import {classLookup, dows, SPECIAL_CELLS, periods, remaining, result, subjects} from "./index";
+import {dows, periods, remaining, result, subjects} from "./index";
 
 const $table = $('#output-table');
 const $remaining = $('#remaining');
@@ -17,15 +17,24 @@ export function renderTable() {
     dows.forEach(dow => {
         $('<th>', {
             html: dow.name,
-            "class": "dow-header",
+            "class": "dow-header start-of-dow",
             colspan: showGroups ? 2 : 1
         }).appendTo($tr);
     })
 
     const $tbody = $('<tbody>').appendTo($table);
     periods.forEach((period, periodIndex) => {
+        if (period.header) {
+            $tr = $('<tr>', {}).appendTo($tbody);
+            createTd({
+                text: period.header,
+                color: 'moccasin',
+                colspan: 2 + (showGroups ? subjects.length * 2 : subjects.length)
+            }, ['period-border']).appendTo($tr);
+        }
+
         subjects.forEach((subject, subjectIndex) => {
-            let cellClasses = new Set(['dow-cell']);
+            let cellClasses = new Set(['dow-cell', 'nowrap']);
             if (subjectIndex === 0) {
                 cellClasses.add('period-border');
             }
@@ -52,6 +61,7 @@ export function renderTable() {
                 }
 
                 !showGroups && isGroup ? cellClasses.add('bold') : cellClasses.delete('bold');
+                cellClasses.add('start-of-dow');
 
                 if (isGroup && cell.fullWidth) {
                     if (startOfGroup) {
@@ -65,6 +75,7 @@ export function renderTable() {
                     if (cell && cell.fullWidth) { return; }
                     if (!showGroups) { return; }
 
+                    cellClasses.delete('start-of-dow');
                     if (isGroup) {
                         if (startOfGroup) {
                             createTd({
@@ -84,11 +95,19 @@ export function renderTable() {
 }
 
 function createTd(cell, classSet, rowspan) {
+    let colspan;
+    if (cell && cell.fullWidth && showGroups) {
+        colspan = 2;
+    }
+    if (cell && cell.colspan) {
+        colspan = cell.colspan;
+    }
+
     return $('<td>', {
         html: cell ? cell.text : '',
         style: cell && cell.color ? `background-color:${cell.color};` : undefined,
-        "class": [...classSet].join(' '),
-        colspan: cell && cell.fullWidth && showGroups ? 2 : undefined,
+        "class": classSet ? [...classSet].join(' ') : undefined,
+        colspan: colspan,
         rowspan: rowspan
     });
 }
