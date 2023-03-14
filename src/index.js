@@ -1,6 +1,6 @@
 import './stylesheets/app.scss'
 import 'remixicon/fonts/remixicon.css';
-import {masterTable, renderRemaining, renderSchedules} from './rendering';
+import {renderRemaining, renderSchedules} from './rendering';
 import {checkForDuplicates, eachWithObject, shuffleArray, downloadExcel} from "./helpers";
 import {layoutSchedule} from "./logic";
 import {getFormData, loadForm} from "./form";
@@ -15,7 +15,7 @@ export const SPECIAL_CELLS = {
 
 // blockGradeIds accounted for canPutClassInSlot
 export const periods = [
-    { id: 'PER 1', timeRange: '8:10 - 8:55', blockGradeIds: [], lunch: false },
+    { id: 'PER 1', timeRange: '8:10 - 8:55', blockGradeIds: [], lunch: false, header: "HOMEROOM 7:55 - 8:10" },
     { id: 'PER 2', timeRange: '9:00 - 9:45', blockGradeIds: [], lunch: false },
     { id: 'PER 3', timeRange: '10:05 - 10:50', blockGradeIds: [], lunch: false, header: "RECESS 9:45 - 10:00" },
     { id: 'PER 4', timeRange: '10:55 - 11:40', blockGradeIds: ['P','K','1','2'], lunch: true, header: "LUNCH Lower 11:00 - 11:40 (K,1,2)" },
@@ -223,10 +223,6 @@ export function generate() {
     renderSchedules();
     renderRemaining();
 }
-
-$('#download').off('click').on('click', () => {
-    downloadExcel(masterTable());
-})
 
 loadForm({
     grades: initialGrades,

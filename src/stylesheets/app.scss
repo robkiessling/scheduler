@@ -35,8 +35,8 @@ html {
   border-collapse: collapse;
 
   th, td {
-    border-top: 1px solid #eee;
-    border-left: 1px solid #eee;
+    border-top: thin solid #eee;
+    border-left: thin solid #eee;
     padding: 1px 8px;
   }
 }
@@ -44,20 +44,34 @@ html {
 #inputs {
   #generate {
     padding: 0.75rem 1.5rem;
-    background: #16B300;
+    background: #007fff;
     box-shadow: 0px 0px 12px -2px rgba(0,0,0,0.5);
     transition: background-color .6s ease;
+    border-radius: 4px;
+    border: 1px solid black;
 
     color: white;
     font-size: 1.125rem;
     letter-spacing: .04em;
+    cursor: pointer;
 
     &:focus, &:hover {
-      background: darken(#16B300,7%);
+      background: darken(#007fff,7%);
     }
-    //&:focus {
-    //  outline: 0.25px solid blue;
-    //}
+  }
+}
+
+#download {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+
+  display: flex;
+  align-items: center;
+  font-size: 1.125rem;
+
+  &:hover .text {
+    text-decoration: underline;
   }
 }
 
@@ -84,8 +98,12 @@ html {
 }
 
 a {
-  color: blue;
+  color: #003eff;
   cursor: pointer;
+
+  &:hover {
+    color: darken(#003eff,7%);
+  }
 }
 
 input[type="color"] {

@@ -2,11 +2,13 @@
 import $ from "jquery";
 import 'jquery-ui/ui/widgets/tabs.js';
 import {dows, periods, remaining, result, subjects} from "./index";
+import {downloadExcel, tablesToExcel} from "./helpers";
 
 
 const $output = $('#outputs');
 let outputTabsInitialized = false;
 let currentTabIndex = 0;
+let $masterTable, $subjectsTable;
 
 const $remaining = $('#remaining');
 
@@ -23,10 +25,10 @@ const PERIOD_WIDTH = 'width:90px;';
 
 // In general, we only apply bottom and right borders, because those have priority over top and left.
 // The only exception is for cells on the very left and top of the table, since those outer edges need borders.
-const BOTTOM_BORDER = 'border-bottom:1px solid black;';
-const RIGHT_BORDER = 'border-right:1px solid black;';
-const LEFT_BORDER = 'border-left:1px solid black;';
-const TOP_BORDER = 'border-top:1px solid black;';
+const BOTTOM_BORDER = 'border-bottom:thin solid black;';
+const RIGHT_BORDER = 'border-right:thin solid black;';
+const LEFT_BORDER = 'border-left:thin solid black;';
+const TOP_BORDER = 'border-top:thin solid black;';
 
 const PRE_LINE = 'white-space:pre-line;';
 const NOWRAP = 'white-space:nowrap;';
@@ -37,11 +39,6 @@ function bgColor(color) {
     return color ? `background-color:${color};` : '';
 }
 
-
-export function masterTable() {
-    return $('#output-tab-master').find('table').get(0);
-}
-
 export function renderSchedules() {
     if (outputTabsInitialized) {
         $output.tabs('destroy');
@@ -50,20 +47,53 @@ export function renderSchedules() {
 
     $('<ul>', { id: "output-tabs" }).appendTo($output);
 
-    let { $table: $masterTable } = createTab(`output-tab-master`, 'Master Schedule');
+    $masterTable = createTab(`output-tab-master`, 'Master Schedule').$table;
     renderMasterSchedule($masterTable);
 
-    subjects.forEach(subject => {
-        let { $table } = createTab(`output-tab-${subject.id.replace(/\s/g, "")}`, subject.id);
-        renderSubjectSchedule($table, subject);
-    });
+    $subjectsTable = createTab(`output-tab-subjects`, 'Teacher Schedules').$table;
+    renderSubjectSchedules($subjectsTable);
 
     $output.tabs({
         active: currentTabIndex,
         activate: (event, ui) => {
             currentTabIndex = ui.newTab.index();
+            updateDownloadName();
         }
     });
+
+    let $download = $('<a>', {
+        id: "download",
+        html: "<span class='ri ri-fw ri-file-download-line'></span> <span class='text'>Download</span>"
+    }).appendTo($output);
+
+    $download.on('click', (evt) => {
+        evt.preventDefault();
+        switch(currentTabIndex) {
+            case 0:
+                downloadExcel($masterTable.get(0), 'Master Schedule');
+                break;
+            case 1:
+                downloadExcel($subjectsTable.get(0), 'Teacher Schedules');
+                break;
+            default:
+                console.error("Cannot download tab index: ", currentTabIndex);
+        }
+    });
+
+    updateDownloadName();
+
+    function updateDownloadName() {
+        switch(currentTabIndex) {
+            case 0:
+                $download.html("<span class='ri ri-fw ri-file-download-line'></span> <span class='text'>Download Master Schedule</span>")
+                break;
+            case 1:
+                $download.html("<span class='ri ri-fw ri-file-download-line'></span> <span class='text'>Download Teacher Schedules</span>")
+                break;
+            default:
+                $download.html("<span class='ri ri-fw ri-file-download-line'></span> <span class='text'>Download</span>")
+        }
+    }
 
     outputTabsInitialized = true;
 }
@@ -71,68 +101,24 @@ export function renderSchedules() {
 function createTab(tabId, tabName) {
     let $tab = $(`<li><a href="#${tabId}">${tabName}</a></li>`).appendTo($output.find('#output-tabs'));
 
-    let $tabContent = $('<div>', {
+    let $tabPanel = $('<div>', {
         id: tabId,
         "class": 'tab-content'
     }).appendTo($output);
 
-    let $table = $('<table>', {
-        "class": 'output-table',
-    }).appendTo($tabContent);
+    // let $tabContent = $('<div>', {
+    //     "class": 'tab-content'
+    // }).appendTo($tabPanel);
+
+    $('<div>', {
+        html: `<table class='output-table' id='${tabId}-table'></table>`
+    }).appendTo($tabPanel);
 
     return {
-        $tab: $tab,
-        $table: $table
+        $table: $tabPanel.find('.output-table')
     }
 }
 
-function renderSubjectSchedule($table, subject) {
-    // -------------------------------------------- <thead> element
-    const $thead = $('<thead>').appendTo($table);
-    let $tr = $('<tr>').appendTo($thead);
-
-    // blank cell over period names
-    $('<th>', { style: `${BOTTOM_BORDER}${LEFT_BORDER}${RIGHT_BORDER}${TOP_BORDER}` }).appendTo($tr);
-
-    // dow header cells
-    dows.forEach(dow => {
-        $('<th>', {
-            html: dow.name,
-            style: `${DOW_FULL_WIDTH}${ALIGN_CENTER}${RIGHT_BORDER}${BOTTOM_BORDER}${TOP_BORDER}`
-        }).appendTo($tr);
-    });
-
-    // -------------------------------------------- <tbody> element
-    const $tbody = $('<tbody>').appendTo($table);
-    periods.forEach((period, periodIndex) => {
-        // -------------------------------------------- period header row
-        if (period.header) {
-            $tr = $('<tr>', {}).appendTo($tbody);
-            $('<td>', {
-                html: period.header,
-                style: `${bgColor(PERIOD_HEADER_COLOR)}${ALIGN_CENTER}${BOTTOM_BORDER}${LEFT_BORDER}${RIGHT_BORDER}`,
-                colspan: 1 + dows.length
-            }).appendTo($tr);
-        }
-
-        let style = `${DOW_FULL_WIDTH}${ALIGN_CENTER}${RIGHT_BORDER}${BOTTOM_BORDER}`;
-
-        $tr = $('<tr>').appendTo($tbody);
-
-        // period name
-        $('<td>', { html: period.id, style: `${style}${NOWRAP}${LEFT_BORDER}` }).appendTo($tr);
-
-        dows.forEach((dow, dowIndex) => {
-            let cell = result[dowIndex][periodIndex][subject.index];
-
-            $('<td>', {
-                html: cell ? cell.text : '',
-                style: `${style}${bgColor(cell ? cell.color : '')}`
-            }).appendTo($tr);
-        })
-    })
-
-}
 
 function renderMasterSchedule($table) {
     // -------------------------------------------- <thead> element
@@ -257,6 +243,76 @@ function renderMasterSchedule($table) {
             })
         });
     })
+}
+
+
+function renderSubjectSchedules($table) {
+    const $tbody = $('<tbody>').appendTo($table);
+    subjects.forEach(subject => {
+        addSubjectSchedule($tbody, subject);
+    });
+}
+
+function addSubjectSchedule($tbody, subject) {
+    // -------------------------------------------- subject name
+    let $tr = $('<tr>').appendTo($tbody);
+    $('<td>', {
+        html: `${subject.id} Schedule`,
+        style: `${BOLD}border-top:none;border-left:none;`,
+        colspan: 1 + dows.length
+    }).appendTo($tr);
+
+    $tr = $('<tr>').appendTo($tbody);
+
+    // blank cell over period names
+    $('<td>', { style: `${BOTTOM_BORDER}${LEFT_BORDER}${RIGHT_BORDER}${TOP_BORDER}` }).appendTo($tr);
+
+    // dow header cells
+    dows.forEach(dow => {
+        $('<td>', {
+            html: dow.name,
+            style: `${BOLD}${DOW_FULL_WIDTH}${ALIGN_CENTER}${RIGHT_BORDER}${BOTTOM_BORDER}${TOP_BORDER}`
+        }).appendTo($tr);
+    });
+
+    periods.forEach((period, periodIndex) => {
+        // -------------------------------------------- period header row
+        if (period.header) {
+            $tr = $('<tr>', {}).appendTo($tbody);
+            $('<td>', {
+                html: period.header,
+                style: `${bgColor(PERIOD_HEADER_COLOR)}${ALIGN_CENTER}${BOTTOM_BORDER}${LEFT_BORDER}${RIGHT_BORDER}`,
+                colspan: 1 + dows.length
+            }).appendTo($tr);
+        }
+
+        let style = `${DOW_FULL_WIDTH}${ALIGN_CENTER}${RIGHT_BORDER}${BOTTOM_BORDER}`;
+
+        $tr = $('<tr>').appendTo($tbody);
+
+        // period name
+        $('<td>', {
+            html: `${period.id}\n${period.timeRange}`,
+            // style: `${style}${NOWRAP}${LEFT_BORDER}`
+            style: `${style}${PRE_LINE}${LEFT_BORDER}`
+        }).appendTo($tr);
+
+        dows.forEach((dow, dowIndex) => {
+            let cell = result[dowIndex][periodIndex][subject.index];
+
+            $('<td>', {
+                html: cell ? cell.text : '',
+                style: `${style}${bgColor(cell ? cell.color : '')}`
+            }).appendTo($tr);
+        });
+    });
+
+    $tr = $('<tr>').appendTo($tbody);
+    $('<td>', {
+        html: '&nbsp;',
+        style: `${ALIGN_CENTER}border-top:none;border-left:none;`,
+        colspan: 1 + dows.length
+    }).appendTo($tr);
 }
 
 function groupInfo(cell, dowIndex, periodIndex, subjectIndex) {
