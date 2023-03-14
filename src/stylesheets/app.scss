@@ -1,4 +1,8 @@
 @import 'multiple-select/dist/multiple-select.css';
+@import 'jquery-ui/themes/base/core';
+@import 'jquery-ui/themes/base/tabs';
+@import 'jquery-ui-theme'; // Can't import straight from npm, images were broken. So just copied non-image parts over
+//import 'jquery-ui/ui/widgets/tabs.js';
 
 html {
   font-family: Arial, sans-serif;
@@ -21,24 +25,13 @@ html {
 
   #outputs {
     flex: 1 1 auto;
-
-    display: flex;
-    flex-direction: column;
-
-    padding: 0.5rem;
-    background: white;
-    //border: 1px solid #a3c5ff;
-
-    .output-container {
-      flex: 1 1 auto;
-    }
   }
 
 }
 
 
 
-#output-table {
+.output-table {
   border-collapse: collapse;
 
   th, td {
@@ -123,7 +116,7 @@ input[type="color"] {
   display: none;
 }
 
-.ms-drop ul > li.multiple label {
+.ms-drop ul > li label {
   display: flex;
   align-items: center;
 }

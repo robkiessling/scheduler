@@ -1,17 +1,100 @@
 
 import $ from "jquery";
+import 'jquery-ui/ui/widgets/tabs.js';
 import {dows, periods, remaining, result, subjects} from "./index";
 
 const PERIOD_HEADER_COLOR = 'moccasin';
 
-const $table = $('#output-table');
+const $output = $('#outputs');
+let outputTabsInitialized = false;
+let currentTabIndex = 0;
+
 const $remaining = $('#remaining');
 
 const showGroups = true;
 
-export function renderMasterSchedule() {
-    $table.empty();
+export function renderSchedules() {
+    if (outputTabsInitialized) {
+        $output.tabs('destroy');
+        $output.empty();
+    }
 
+    $('<ul>', { id: "output-tabs" }).appendTo($output);
+
+    let { $table: $masterTable } = createTab(`output-tab-master`, 'Master Schedule');
+    renderMasterSchedule($masterTable);
+
+    subjects.forEach(subject => {
+        let { $table } = createTab(`output-tab-${subject.id.replace(/\s/g, "")}`, subject.id);
+        renderSubjectSchedule($table, subject);
+    });
+
+    $output.tabs({
+        active: currentTabIndex,
+        activate: (event, ui) => {
+            currentTabIndex = ui.newTab.index();
+        }
+    });
+
+    outputTabsInitialized = true;
+}
+
+function createTab(tabId, tabName) {
+    let $tab = $(`<li><a href="#${tabId}">${tabName}</a></li>`).appendTo($output.find('#output-tabs'));
+
+    let $tabContent = $('<div>', {
+        id: tabId,
+        "class": 'tab-content'
+    }).appendTo($output);
+
+    let $table = $('<table>', {
+        "class": 'output-table'
+    }).appendTo($tabContent);
+
+    return {
+        $tab: $tab,
+        $table: $table
+    }
+}
+
+function renderSubjectSchedule($table, subject) {
+    const $thead = $('<thead>').appendTo($table);
+    let $tr = $('<tr>').appendTo($thead);
+    $('<th>', { "class": "period-header" }).appendTo($tr); // over period name
+    dows.forEach(dow => {
+        $('<th>', {
+            html: dow.name,
+            "class": "dow-header start-of-dow"
+        }).appendTo($tr);
+    });
+
+    const $tbody = $('<tbody>').appendTo($table);
+    periods.forEach((period, periodIndex) => {
+        if (period.header) {
+            $tr = $('<tr>', {}).appendTo($tbody);
+            createTd({
+                text: period.header,
+                color: PERIOD_HEADER_COLOR
+            }, ['period-border'], 2 + subjects.length).appendTo($tr);
+        }
+
+        let cellClasses = new Set(['dow-cell', 'nowrap']);
+        cellClasses.add('period-border');
+
+        $tr = $('<tr>').appendTo($tbody);
+        createTd({text: period.id}, cellClasses).appendTo($tr);
+        dows.forEach((dow, dowIndex) => {
+            let cell = result[dowIndex][periodIndex][subject.index];
+
+            cellClasses.add('start-of-dow');
+
+            createTd(cell, cellClasses, 1).appendTo($tr);
+        })
+    })
+
+}
+
+function renderMasterSchedule($table) {
     const $thead = $('<thead>').appendTo($table);
     let $tr = $('<tr>').appendTo($thead);
     $('<th>', { "class": "period-header" }).appendTo($tr); // over period name
@@ -31,8 +114,7 @@ export function renderMasterSchedule() {
             createTd({
                 text: period.header,
                 color: PERIOD_HEADER_COLOR,
-                colspan: 2 + (showGroups ? subjects.length * 2 : subjects.length)
-            }, ['period-border']).appendTo($tr);
+            }, ['period-border'], 2 + (showGroups ? subjects.length * 2 : subjects.length)).appendTo($tr);
         }
 
         subjects.forEach((subject, subjectIndex) => {
@@ -68,7 +150,7 @@ export function renderMasterSchedule() {
 
                 if (isGroup && cell.fullWidth) {
                     if (startOfGroup) {
-                        createTd(cell, cellClasses, groupSize).appendTo($tr);
+                        createTd(cell, cellClasses, undefined, groupSize).appendTo($tr);
                     }
                     // Do not create cells if not startOfGroup
                 }
@@ -84,7 +166,7 @@ export function renderMasterSchedule() {
                             createTd({
                                 text: cell.group,
                                 color: cell.color
-                            }, cellClasses, groupSize).appendTo($tr);
+                            }, cellClasses, undefined, groupSize).appendTo($tr);
                         }
                         // Do not create cells if not startOfGroup
                     }
@@ -97,13 +179,9 @@ export function renderMasterSchedule() {
     })
 }
 
-function createTd(cell, classSet, rowspan) {
-    let colspan;
-    if (cell && cell.fullWidth && showGroups) {
+function createTd(cell, classSet, colspan, rowspan) {
+    if (colspan === undefined && cell && cell.fullWidth && showGroups) {
         colspan = 2;
-    }
-    if (cell && cell.colspan) {
-        colspan = cell.colspan;
     }
 
     return $('<td>', {

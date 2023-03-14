@@ -166,7 +166,7 @@ function markLunchPeriods() {
             // Iterating periods in reverse order, since we want to try place lunch in the lowest priority period
             for(let i = periodPriority.length - 1; i >= 0; i--) {
                 let period = periodLookup[periodPriority[i]];
-                if (result[dow.index][period.index][subject.index] === null) {
+                if (period.lunch && result[dow.index][period.index][subject.index] === null) {
                     result[dow.index][period.index][subject.index] = SPECIAL_CELLS.LUNCH;
                     break;
                 }

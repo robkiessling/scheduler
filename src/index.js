@@ -1,12 +1,12 @@
 import './stylesheets/app.scss'
 import 'remixicon/fonts/remixicon.css';
-import {renderRemaining, renderMasterSchedule} from './rendering';
+import {renderRemaining, renderSchedules} from './rendering';
 import {checkForDuplicates, eachWithObject, shuffleArray} from "./helpers";
 import {layoutSchedule} from "./logic";
 import {getFormData, loadForm} from "./form";
 
 export const SPECIAL_CELLS = {
-    OOF: { text: 'OOF', fullWidth: true, color: '#aaa' },
+    OOF: { text: '', fullWidth: true, color: '#aaa' },
     LUNCH: { text: 'LUNCH', fullWidth: true, color: '#aaa' },
     EARLY_RELEASE: { text: 'EARLY RELEASE', group: 'EARLY_RELEASE', fullWidth: true, color: '#ddd' },
     EVENTS: { text: 'EVENTS', group: 'EVENTS', fullWidth: true, color: '#ddd' }
@@ -69,7 +69,7 @@ export let subjects = [];
 
 export let dowPriority = ['T','W','R','M','F'];
 // export let periodPriority = ['PER 6','PER 5','Specials Lunch','PER 4','PER 3','PER 2','PER 1'];
-export let periodPriority = ['PER 6','PER 5','PER 4','PER 3','PER 2','PER 1','Specials Lunch'];
+export let periodPriority = ['PER 5','PER 6','PER 4','PER 3','PER 2','PER 1','Specials Lunch'];
 
 // TODO just setting biggest to smallest
 // TODO Putting K last, so other grades can fill T/W/R morning first
@@ -211,7 +211,7 @@ export function generate() {
     shuffleArray(gradePriority);
 
     layoutSchedule();
-    renderMasterSchedule();
+    renderSchedules();
     renderRemaining();
 }
 
@@ -219,3 +219,26 @@ loadForm({
     grades: initialGrades,
     subjects: initialSubjects
 });
+
+// const interval = setInterval(() => {
+//     generate();
+//
+//     let badLunch = false;
+//     periods.forEach(period => {
+//         if (period.lunch) { return; }
+//         if (badLunch) { return; }
+//
+//         result.forEach(dow => {
+//             if (badLunch) { return; }
+//             dow[period.index].forEach(cell => {
+//                 if (cell && cell.text === 'LUNCH') {
+//                     badLunch = true;
+//                 }
+//             })
+//         })
+//     })
+//
+//     if (badLunch) {
+//         clearInterval(interval);
+//     }
+// }, 50);
