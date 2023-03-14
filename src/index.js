@@ -1,9 +1,10 @@
 import './stylesheets/app.scss'
 import 'remixicon/fonts/remixicon.css';
-import {renderRemaining, renderSchedules} from './rendering';
-import {checkForDuplicates, eachWithObject, shuffleArray} from "./helpers";
+import {masterTable, renderRemaining, renderSchedules} from './rendering';
+import {checkForDuplicates, eachWithObject, shuffleArray, downloadExcel} from "./helpers";
 import {layoutSchedule} from "./logic";
 import {getFormData, loadForm} from "./form";
+import $ from "jquery";
 
 export const SPECIAL_CELLS = {
     OOF: { text: '', fullWidth: true, color: '#aaa' },
@@ -31,15 +32,25 @@ export const dows = [
     { id: 'F', name: 'Fri' },
 ]
 
+// let initialGrades = [
+//     { id: 'P', color: '#568ef2', classIds: [] },
+//     { id: 'K', color: '#E06666', classIds: ['A1', 'A4', 'A5', 'A6'] },
+//     { id: '1', color: '#FFD966', classIds: ['C2', 'C3', 'C4', 'C5'] },
+//     { id: '2', color: '#FF9900', classIds: ['B2', 'B3', 'B4', 'B5'] },
+//     { id: '3', color: '#93C47D', classIds: ['B24', 'B25', 'B26'] },
+//     { id: '4', color: '#C38CDB', classIds: ['C24', 'C25', 'C26'] },
+//     { id: '5', color: '#EAD1DC', classIds: ['C21', 'C22', 'C23'] },
+//     { id: '6', color: '#00FFFF', classIds: ['B21', 'B22', 'B23'] },
+// ];
 let initialGrades = [
-    { id: 'P', color: '#568ef2', classIds: [] },
+    { id: 'P', color: '#568ef2', classIds: ['P1'] },
     { id: 'K', color: '#E06666', classIds: ['A1', 'A4', 'A5', 'A6'] },
     { id: '1', color: '#FFD966', classIds: ['C2', 'C3', 'C4', 'C5'] },
     { id: '2', color: '#FF9900', classIds: ['B2', 'B3', 'B4', 'B5'] },
     { id: '3', color: '#93C47D', classIds: ['B24', 'B25', 'B26'] },
     { id: '4', color: '#C38CDB', classIds: ['C24', 'C25', 'C26'] },
-    { id: '5', color: '#EAD1DC', classIds: ['C21', 'C22', 'C23'] },
-    { id: '6', color: '#00FFFF', classIds: ['B21', 'B22', 'B23'] },
+    { id: '5', color: '#EAD1DC', classIds: ['C21', 'C22', 'C23', 'B21'] },
+    { id: '6', color: '#00FFFF', classIds: ['B22', 'B23'] },
 ];
 
 // TODO Initial list of the static ids so we can load blockGradeIds element in subjectsList
@@ -62,7 +73,7 @@ let initialSubjects = [
     { id: 'PE', blockDowIds: [], blockGradeIds: [] },
     { id: 'LIBRARY', blockDowIds: [], blockGradeIds: [] },
     { id: 'LANGUAGE', blockDowIds: [], blockGradeIds: [] },
-    { id: 'SPECIAL', blockDowIds: ['M'], blockGradeIds: [] }, // TODO forces special to a single day
+    { id: 'SPECIAL', blockDowIds: ['F'], blockGradeIds: [] }, // TODO forces special to a single day
 ]
 
 export let subjects = [];
@@ -71,10 +82,8 @@ export let dowPriority = ['T','W','R','M','F'];
 // export let periodPriority = ['PER 6','PER 5','Specials Lunch','PER 4','PER 3','PER 2','PER 1'];
 export let periodPriority = ['PER 5','PER 6','PER 4','PER 3','PER 2','PER 1','Specials Lunch'];
 
-// TODO just setting biggest to smallest
 // TODO Putting K last, so other grades can fill T/W/R morning first
-// export let gradePriority = ['2','1','K','3','4','5','6']; // causes an ARTIC on monday
-export let gradePriority = ['3','4','5','6','2','1','K'];
+export let gradePriority = ['3','4','5','6','2','1','K','P'];
 
 export let result;
 export let remaining;
@@ -214,6 +223,10 @@ export function generate() {
     renderSchedules();
     renderRemaining();
 }
+
+$('#download').off('click').on('click', () => {
+    downloadExcel(masterTable());
+})
 
 loadForm({
     grades: initialGrades,

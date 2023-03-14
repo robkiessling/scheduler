@@ -52,6 +52,11 @@ function createEventsPeriod() {
  */
 function createGradeLevelMeetings() {
     iterateGrades(grade => {
+        // Must have at least 2 different classes to hold grade level meetings
+        if (grade.classIds.length <= 1) {
+            return;
+        }
+
         let meetingCreated = false;
 
         iterateDows(dow => {
@@ -87,7 +92,7 @@ function createGradeLevelMeetings() {
 function createGradeLevelMeeting(grade, dow, period) {
     for (let offset = 0; offset <= subjects.length - grade.classIds.length; offset++) {
         let perms = permutations(grade.classIds);
-        let group = `Grade ${grade.id}<br> ARTIC`;
+        let group = `Grade ${grade.id}\n ARTIC`;
 
         // There are 2 permutations going on - one for the current period and one for the subsequent period.
         for (let i = 0; i < perms.length; i++) {
@@ -136,6 +141,8 @@ function removePermutation(permutation, offset, dow, periodIndex) {
 }
 
 function randomizeRemaining() {
+    // TODO Option: Give P and 6 lowest priority for SPECIAL
+
     // Random order:
     let remainingArray = Object.values(remaining);
     shuffleArray(remainingArray);

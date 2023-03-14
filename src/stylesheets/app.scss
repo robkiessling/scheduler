@@ -35,26 +35,10 @@ html {
   border-collapse: collapse;
 
   th, td {
-    border: 1px solid #eee;
+    border-top: 1px solid #eee;
+    border-left: 1px solid #eee;
     padding: 1px 8px;
   }
-
-  td {
-    text-align: center;
-  }
-  th.dow-header {
-    min-width: 100px;
-  }
-  td.period-border {
-    border-top: 1.5px solid black;
-  }
-  td.dow-cell {
-    min-width: 50px;
-  }
-  .start-of-dow {
-    border-left: 1.5px solid black;
-  }
-
 }
 
 #inputs {
