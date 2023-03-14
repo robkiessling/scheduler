@@ -1,5 +1,5 @@
 import './stylesheets/app.scss'
-import {renderRemaining, renderTable} from './rendering';
+import {renderRemaining, renderMasterSchedule} from './rendering';
 import {checkForDuplicates, eachWithObject, shuffleArray} from "./helpers";
 import {layoutSchedule} from "./logic";
 
@@ -121,7 +121,6 @@ function initResult() {
         });
         result.push(dowResult);
     });
-    console.log(result);
 }
 
 function initRemaining() {
@@ -135,7 +134,6 @@ function initRemaining() {
             })
         });
     });
-    console.log(remaining);
 }
 function remainingKey(gradeId, subjectId, classId) {
     return `${gradeId}.${subjectId}.${classId}`
@@ -193,6 +191,5 @@ initResult();
 initRemaining();
 // renderRemaining();
 layoutSchedule();
-console.log('final: ', result);
-renderTable();
+renderMasterSchedule();
 renderRemaining();

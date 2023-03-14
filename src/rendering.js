@@ -2,12 +2,14 @@
 import $ from "jquery";
 import {dows, periods, remaining, result, subjects} from "./index";
 
+const PERIOD_HEADER_COLOR = 'moccasin';
+
 const $table = $('#output-table');
 const $remaining = $('#remaining');
 
 const showGroups = true;
 
-export function renderTable() {
+export function renderMasterSchedule() {
     $table.empty();
 
     const $thead = $('<thead>').appendTo($table);
@@ -28,7 +30,7 @@ export function renderTable() {
             $tr = $('<tr>', {}).appendTo($tbody);
             createTd({
                 text: period.header,
-                color: 'moccasin',
+                color: PERIOD_HEADER_COLOR,
                 colspan: 2 + (showGroups ? subjects.length * 2 : subjects.length)
             }, ['period-border']).appendTo($tr);
         }
@@ -45,6 +47,7 @@ export function renderTable() {
             dows.forEach((dow, dowIndex) => {
                 let cell = result[dowIndex][periodIndex][subjectIndex];
 
+                // A group is a set of consecutive cells with the same 'group' attribute
                 let isGroup = cell && cell.group;
                 let startOfGroup = false;
                 let groupSize = 0;

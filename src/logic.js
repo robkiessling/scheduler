@@ -17,13 +17,13 @@ import {
 import {permutations, shuffleArray} from "./helpers";
 
 export function layoutSchedule() {
-    applyEarlyRelease();
-    applyEvents();
-    applyGradeLevelMeetings();
+    createEarlyReleaseDay();
+    createEventsPeriod();
+    createGradeLevelMeetings();
     randomizeRemaining();
 }
 
-function applyEarlyRelease() {
+function createEarlyReleaseDay() {
     let dowIndex = dowLookup['W'].index;
     let periodIndex = periodLookup['PER 6'].index;
     subjects.forEach((subject, subjectIndex) => {
@@ -31,7 +31,7 @@ function applyEarlyRelease() {
     });
 }
 
-function applyEvents() {
+function createEventsPeriod() {
     let dowIndex = dowLookup['F'].index;
     let periodIndex = periodLookup['PER 6'].index;
     subjects.forEach((subject, subjectIndex) => {
@@ -39,45 +39,64 @@ function applyEvents() {
     });
 }
 
-function applyGradeLevelMeetings() {
+/**
+ * Every grade level needs to find 2 consecutive periods where all of its classes are active at the same time
+ */
+function createGradeLevelMeetings() {
     iterateGrades(grade => {
-        let foundGradeMatch = false;
+        let meetingCreated = false;
+
         iterateDows(dow => {
-            if (foundGradeMatch) { return; }
+            if (meetingCreated) { return; }
+
             iteratePeriods(period => {
-                if (foundGradeMatch) { return; }
+                if (meetingCreated) { return; }
 
-                for (let offset = 0; offset <= subjects.length - grade.classIds.length; offset++) {
-                    let perms = permutations(grade.classIds);
-                    let group = `Grade ${grade.id}<br> ARTIC`;
-
-                    perms.forEach(perm1 => {
-                        if (foundGradeMatch) { return; }
-
-                        if (permutationMatches(perm1, offset, dow, period.index)) {
-                            applyPermutation(perm1, offset, dow, period.index, group);
-                            perms.forEach(perm2 => {
-                                if (foundGradeMatch) { return; }
-                                if (permutationMatches(perm2, offset, dow, period.index + 1)) {
-                                    applyPermutation(perm2, offset, dow, period.index + 1, group);
-                                    // console.log(`placed ${grade.id} in ${period.index} / ${period.index+1}`)
-                                    foundGradeMatch = true;
-                                }
-                            });
-                            if (!foundGradeMatch) {
-                                removePermutation(perm1, offset, dow, period.index);
-                            }
-                        }
-                    });
-                }
+                meetingCreated = createGradeLevelMeeting(grade, dow, period);
             });
         });
-        if (!foundGradeMatch) {
+        
+        if (!meetingCreated) {
             console.error(`Could not find a grade-level meeting for grade ${grade.id}`);
         }
     })
 }
 
+/**
+ * Tries to fit all of a grade's classes into the given period (and the subsequent period).
+ *
+ * Find a match by going through all the permutations of the grade classes. Currently we only make permutations for
+ * consecutive subjects - this makes it so we can display the group better during rendering, and it also reduces
+ * the total number of permutations to try.
+ *
+ * Returns true if the meeting could be created, returns false if the combination is not possible.
+ */
+function createGradeLevelMeeting(grade, dow, period) {
+    for (let offset = 0; offset <= subjects.length - grade.classIds.length; offset++) {
+        let perms = permutations(grade.classIds);
+        let group = `Grade ${grade.id}<br> ARTIC`;
+
+        // There are 2 permutations going on - one for the current period and one for the subsequent period.
+        for (let i = 0; i < perms.length; i++) {
+            if (permutationMatches(perms[i], offset, dow, period.index)) {
+                // If the 1st permutation matches, we apply it so we can then test if the 2nd permutation will
+                // match in the subsequent period (we have to apply it because that affects canPutClassInSlot method).
+                // If 2nd permutation does not match, we will undo the application of the 1st permutation.
+                applyPermutation(perms[i], offset, dow, period.index, group);
+                for (let j = 0; j < perms.length; j++) { 
+                    if (permutationMatches(perms[j], offset, dow, period.index + 1)) {
+                        applyPermutation(perms[j], offset, dow, period.index + 1, group);
+                        return true;
+                    }
+                }
+                removePermutation(perms[i], offset, dow, period.index);
+            }
+        }
+    }
+    return false;
+}
+
+// Returns true if the permutation of classes can all fit into their slots
 function permutationMatches(permutation, offset, dow, periodIndex) {
     if (periodIndex >= periods.length) {
         return false;
@@ -99,7 +118,7 @@ function applyPermutation(permutation, offset, dow, periodIndex, group) {
 function removePermutation(permutation, offset, dow, periodIndex) {
     permutation.forEach((classId, subjectOffset) => {
         let subjectIndex = offset + subjectOffset;
-        removeClassInSlot(classLookup[classId], dow, periods[periodIndex], subjects[subjectIndex])
+        removeClassFromSlot(classLookup[classId], dow, periods[periodIndex], subjects[subjectIndex])
     });
 }
 
@@ -107,37 +126,25 @@ function randomizeRemaining() {
     // Random order:
     let remainingArray = Object.values(remaining);
     shuffleArray(remainingArray);
-    remainingArray.forEach(remains => findNextOpenSlot(remains.class));
+    remainingArray.forEach(remains => putInNextOpenSlot(remains.class));
 
     // In order:
     // for (let [remainsId, remains] of Object.entries(remaining)) {
-    //     findNextOpenSlot(remains.class);
+    //     putInNextOpenSlot(remains.class);
     // }
 }
-function findNextOpenSlot(classId) {
-    // for (let dowIndex = 0; dowIndex < result.length; dowIndex++) {
-    //     for (let periodIndex = 0; periodIndex < result[dowIndex].length; periodIndex++) {
-    //         for (let subjectIndex = 0; subjectIndex < result[dowIndex][periodIndex].length; subjectIndex++) {
-    //             if (canPutClassInSlot(classLookup[classId], dows[dowIndex], periods[periodIndex], subjects[subjectIndex])) {
-    //                 putClassInSlot(classLookup[classId], dows[dowIndex], periods[periodIndex], subjects[subjectIndex]);
-    //                 return;
-    //             }
-    //         }
-    //     }
-    // }
 
-    for (let dowP = 0; dowP < dowPriority.length; dowP++) {
-        let dowIndex = dowLookup[dowPriority[dowP]].index;
-        for (let periodP = 0; periodP < periodPriority.length; periodP++) {
-            let periodIndex = periodLookup[periodPriority[periodP]].index;
-            for (let subjectIndex = 0; subjectIndex < result[dowIndex][periodIndex].length; subjectIndex++) {
-                if (canPutClassInSlot(classLookup[classId], dows[dowIndex], periods[periodIndex], subjects[subjectIndex])) {
-                    putClassInSlot(classLookup[classId], dows[dowIndex], periods[periodIndex], subjects[subjectIndex]);
-                    return;
+function putInNextOpenSlot(classId) {
+    iterateDows(dow => {
+        return iteratePeriods(period => {
+            return iterateSubjects(subject => {
+                if (canPutClassInSlot(classLookup[classId], dow, period, subject)) {
+                    putClassInSlot(classLookup[classId], dow, period, subject);
+                    return false; // Break early
                 }
-            }
-        }
-    }
+            });
+        })
+    });
 }
 
 function canPutClassInSlot(klass, dow, period, subject) {
@@ -187,22 +194,44 @@ function putClassInSlot(klass, dow, period, subject, group) {
     };
     removeRemaining(klass.gradeId, subject.id, klass.id);
 }
-function removeClassInSlot(klass, dow, period, subject) {
+function removeClassFromSlot(klass, dow, period, subject) {
     addRemaining(klass.gradeId, subject.id, klass.id);
     result[dow.index][period.index][subject.index] = null;
 }
 
 
-function iterateGrades(callback) {
-    // standard order:
-    // grades.forEach((grade, index) => callback(grade, index));
 
-    // priority order:
-    gradePriority.forEach((gradeId, index) => callback(gradeLookup[gradeId], index));
+
+
+/**
+ * The following iterators iterate through the records in a priority order. If the callback returns false, iteration
+ * will cease and the iterator will also return false.
+ */
+
+function iterateGrades(callback) {
+    for(let i = 0; i < gradePriority.length; i++) {
+        const returnVal = callback(gradeLookup[gradePriority[i]], i);
+        if (returnVal === false) { return false; }
+    }
 }
+
 function iterateDows(callback) {
-    dowPriority.forEach((dowId, index) => callback(dowLookup[dowId], index));
+    for(let i = 0; i < dowPriority.length; i++) {
+        const returnVal = callback(dowLookup[dowPriority[i]], i);
+        if (returnVal === false) { return false; }
+    }
 }
+
 function iteratePeriods(callback) {
-    periodPriority.forEach((periodId, index) => callback(periodLookup[periodId], index));
+    for(let i = 0; i < periodPriority.length; i++) {
+        const returnVal = callback(periodLookup[periodPriority[i]], i);
+        if (returnVal === false) { return false; }
+    }
+}
+
+function iterateSubjects(callback) {
+    for(let i = 0; i < subjects.length; i++) {
+        const returnVal = callback(subjects[i], i);
+        if (returnVal === false) { return false; }
+    }
 }
