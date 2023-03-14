@@ -9,7 +9,7 @@ export const SPECIAL_CELLS = {
     OOF: { text: 'OOF', fullWidth: true, color: '#aaa' },
     LUNCH: { text: 'LUNCH', fullWidth: true, color: '#aaa' },
     EARLY_RELEASE: { text: 'EARLY RELEASE', group: 'EARLY_RELEASE', fullWidth: true, color: '#ddd' },
-    EVENTS: { text: 'EVENTS', group: 'EVENTS', fullWidth: true, color: '#888' }
+    EVENTS: { text: 'EVENTS', group: 'EVENTS', fullWidth: true, color: '#ddd' }
 }
 
 // blockGradeIds accounted for canPutClassInSlot

@@ -4,10 +4,6 @@ export function checkForDuplicates(array) {
     return new Set(array).size !== array.length;
 }
 
-export function isFunction(value) {
-    return typeof value === 'function';
-}
-
 // Builds an object while iterating over an array (similar to ruby's each_with_object method)
 export function eachWithObject(array, initialObject = {}, callback) {
     return array.reduce((obj, element) => {
@@ -16,21 +12,38 @@ export function eachWithObject(array, initialObject = {}, callback) {
     }, initialObject);
 }
 
-// Returns a new object while transforming the object values (similar to ruby's transform_values method)
-export function transformValues(obj, callback) {
-    return Object.fromEntries(
-        Object.entries(obj).map(
-            ([k, v], i) => [k, callback(v, k, i)]
-        )
-    );
-}
-
+// Shuffle an array randomly
 // https://stackoverflow.com/a/12646864/4904996
 export function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
     }
+}
+
+// Shuffle an array randomly according to seed value
+// https://stackoverflow.com/a/53758827/4904996
+export function shuffleArrayWithSeed(array, seed) {
+    let m = array.length, t, i;
+
+    // While there remain elements to shuffle…
+    while (m) {
+        // Pick a remaining element…
+        i = Math.floor(random(seed) * m--);
+
+        // And swap it with the current element.
+        t = array[m];
+        array[m] = array[i];
+        array[i] = t;
+        ++seed;
+    }
+
+    return array;
+}
+
+function random(seed) {
+    let x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
 }
 
 // https://stackoverflow.com/a/20871714/4904996

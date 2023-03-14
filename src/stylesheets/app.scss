@@ -32,13 +32,6 @@ html {
     .output-container {
       flex: 1 1 auto;
     }
-
-    #remaining {
-      flex-shrink: 0;
-
-      background: red;
-      padding: 1rem;
-    }
   }
 
 }
@@ -71,9 +64,38 @@ html {
 
 }
 
+#inputs {
+  #generate {
+    padding: 0.75rem 1.5rem;
+    background: #16B300;
+    box-shadow: 0px 0px 12px -2px rgba(0,0,0,0.5);
+    transition: background-color .6s ease;
+
+    color: white;
+    font-size: 1.125rem;
+    letter-spacing: .04em;
+
+    &:focus, &:hover {
+      background: darken(#16B300,7%);
+    }
+    //&:focus {
+    //  outline: 0.25px solid blue;
+    //}
+  }
+}
 
 
+#remaining {
+  //flex-shrink: 0;
 
+  background: red;
+  padding: 1rem;
+
+  p {
+    margin-bottom: 0.5rem;
+    margin-top: 0;
+  }
+}
 
 
 .bold {

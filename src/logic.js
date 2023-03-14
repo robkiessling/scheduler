@@ -21,8 +21,12 @@ export function layoutSchedule() {
     createEventsPeriod();
     createGradeLevelMeetings();
     randomizeRemaining();
+    markLunchPeriods();
 }
 
+/**
+ * School ends early on Wednesday, so we mark its period 6 as "early release"
+ */
 function createEarlyReleaseDay() {
     let dowIndex = dowLookup['W'].index;
     let periodIndex = periodLookup['PER 6'].index;
@@ -31,6 +35,9 @@ function createEarlyReleaseDay() {
     });
 }
 
+/**
+ * Reserve period 6 on fridays for events
+ */
 function createEventsPeriod() {
     let dowIndex = dowLookup['F'].index;
     let periodIndex = periodLookup['PER 6'].index;
@@ -40,7 +47,8 @@ function createEventsPeriod() {
 }
 
 /**
- * Every grade level needs to find 2 consecutive periods where all of its classes are active at the same time
+ * Every grade level needs to find 2 consecutive periods where all classes for the grade are active
+ * (this allows the teachers in that grade to meet with each other for 2 hours per week).
  */
 function createGradeLevelMeetings() {
     iterateGrades(grade => {
@@ -63,11 +71,16 @@ function createGradeLevelMeetings() {
 }
 
 /**
- * Tries to fit all of a grade's classes into the given period (and the subsequent period).
+ * Tries to fit all of a grade's classes into 2 consecutive periods (starting with the period given in the parameters).
  *
- * Find a match by going through all the permutations of the grade classes. Currently we only make permutations for
- * consecutive subjects - this makes it so we can display the group better during rendering, and it also reduces
- * the total number of permutations to try.
+ * It finds a match by iterating through all the permutations of the grade's classes, and seeing if the permutation
+ * fits in the appropriate subjects for the period. If everything fits, the cells will be filled and each cell will
+ * have a special 'group' attribute denoting the grade level meeting.
+ *
+ * Note: Currently we only include permutations where the classes are in consecutive subjects. This means that the
+ *       order of the subjects actually affects things. It is implemented this way because that's how the old teacher
+ *       seemed to do it (it makes it easier to display the actual group during rendering). It also reduces the total
+ *       number of permutations we have to try.
  *
  * Returns true if the meeting could be created, returns false if the combination is not possible.
  */
@@ -126,26 +139,42 @@ function randomizeRemaining() {
     // Random order:
     let remainingArray = Object.values(remaining);
     shuffleArray(remainingArray);
-    remainingArray.forEach(remains => putInNextOpenSlot(remains.class));
+    remainingArray.forEach(remains => putClassInNextOpenSlot(classLookup[remains.class]));
 
     // In order:
     // for (let [remainsId, remains] of Object.entries(remaining)) {
-    //     putInNextOpenSlot(remains.class);
+    //     putClassInNextOpenSlot(remains.class);
     // }
 }
 
-function putInNextOpenSlot(classId) {
+function putClassInNextOpenSlot(klass) {
     iterateDows(dow => {
         return iteratePeriods(period => {
             return iterateSubjects(subject => {
-                if (canPutClassInSlot(classLookup[classId], dow, period, subject)) {
-                    putClassInSlot(classLookup[classId], dow, period, subject);
+                if (canPutClassInSlot(klass, dow, period, subject)) {
+                    putClassInSlot(klass, dow, period, subject);
                     return false; // Break early
                 }
             });
         })
     });
 }
+
+function markLunchPeriods() {
+    iterateDows(dow => {
+        iterateSubjects(subject => {
+            // Iterating periods in reverse order, since we want to try place lunch in the lowest priority period
+            for(let i = periodPriority.length - 1; i >= 0; i--) {
+                let period = periodLookup[periodPriority[i]];
+                if (result[dow.index][period.index][subject.index] === null) {
+                    result[dow.index][period.index][subject.index] = SPECIAL_CELLS.LUNCH;
+                    break;
+                }
+            }
+        });
+    });
+}
+
 
 function canPutClassInSlot(klass, dow, period, subject) {
     if (!isRemaining(klass.gradeId, subject.id, klass.id)) {

@@ -118,9 +118,15 @@ function createTd(cell, classSet, rowspan) {
 export function renderRemaining() {
     $remaining.empty();
 
+    $('<p>', {
+        html: 'Errors:'
+    }).appendTo($remaining);
+
     for (let [remainsId, remains] of Object.entries(remaining)) {
-        $('<span>', {
+        $('<p>', {
             html: JSON.stringify(remains)
         }).appendTo($remaining);
     }
+
+    $remaining.toggle(Object.keys(remaining).length > 0);
 }
