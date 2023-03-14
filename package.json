@@ -37,6 +37,9 @@
     "webpack-dev-server": "^4.11.1"
   },
   "dependencies": {
-    "jquery": "^3.6.4"
+    "jquery": "^3.6.4",
+    "jquery-ui": "^1.13.2",
+    "multiple-select": "^1.5.2",
+    "remixicon": "^2.5.0"
   }
 }

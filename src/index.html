@@ -5,11 +5,77 @@
     <title>Scheduler</title>
 </head>
 <body>
-<div id="output">
-    <div id="output-table-container">
-        <table id="output-table"></table>
+<div id="main-content">
+    <div id="inputs">
+        <b style="display:block;margin-bottom:1rem;">Configuration</b>
+        <div id="grades-list" style="margin-bottom:1rem;">
+<!--            <b>Grades</b>-->
+            <table>
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>Grade</th>
+                    <th>Classes</th>
+                    <th>Color</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr class="template">
+                    <td>
+<!--                        <a class="reorder ri ri-fw ri-arrow-up-down-line"></a>-->
+                    </td>
+                    <td><input type="text" name="id" style="width:60px;" disabled></td>
+                    <td><input type="text" name="classIds" style="width:180px;"></td>
+                    <td><input type="color" name="color" style="width:60px;"></td>
+                    <td>
+<!--                        <a class="delete ri ri-fw ri-delete-bin-line"></a>-->
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+<!--            <a class="add" style="margin-left: 2rem;margin-top:6px;">Add Grade</a>-->
+        </div>
+        <div id="subjects-list">
+<!--            <b>Grades</b>-->
+            <table>
+                <thead>
+                <tr>
+                    <th></th>
+                    <th>Subject</th>
+                    <th>Exclude Days</th>
+                    <th>Excl. Grades</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr class="template">
+                    <td>
+                        <a class="reorder ri ri-fw ri-arrow-up-down-line"></a>
+                    </td>
+                    <td><input type="text" name="id" style="width:120px;"></td>
+                    <td>
+                        <select name="blockDowIds" multiple="multiple" style="width:100px;"></select>
+                    </td>
+                    <td><select name="blockGradeIds" multiple="multiple" style="width:100px;"></td>
+                    <td>
+                        <a class="delete ri ri-fw ri-delete-bin-line"></a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <a class="add" style="margin-left: 2rem;margin-top:6px;">Add Subject</a>
+        </div>
+        <div style="margin-top:2rem;">
+            <button id="generate">Generate</button>
+        </div>
     </div>
-    <div id="remaining"></div>
+    <div id="outputs">
+        <div class="output-container">
+            <table id="output-table"></table>
+        </div>
+        <div id="remaining"></div>
+    </div>
 </div>
 </body>
 </html>

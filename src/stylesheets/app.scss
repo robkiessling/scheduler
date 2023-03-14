@@ -1,7 +1,80 @@
+@import 'multiple-select/dist/multiple-select.css';
 
 html {
   font-family: Arial, sans-serif;
+  font-size: 0.875rem;
+  background: #eee;
 }
+
+#main-content {
+  display: flex;
+
+  #inputs {
+    flex-shrink: 0;
+    width: 400px;
+    margin-right: 0.75rem;
+
+    padding: 0.5rem;
+    background: #f5f9ff;
+    border: 1px solid #a3c5ff;
+  }
+
+  #outputs {
+    flex: 1 1 auto;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 0.5rem;
+    background: white;
+    //border: 1px solid #a3c5ff;
+
+    .output-container {
+      flex: 1 1 auto;
+    }
+
+    #remaining {
+      flex-shrink: 0;
+
+      background: red;
+      padding: 1rem;
+    }
+  }
+
+}
+
+
+
+#output-table {
+  border-collapse: collapse;
+
+  th, td {
+    border: 1px solid #eee;
+    padding: 1px 8px;
+  }
+
+  td {
+    text-align: center;
+  }
+  th.dow-header {
+    min-width: 100px;
+  }
+  td.period-border {
+    border-top: 1.5px solid black;
+  }
+  td.dow-cell {
+    min-width: 50px;
+  }
+  .start-of-dow {
+    border-left: 1.5px solid black;
+  }
+
+}
+
+
+
+
+
 
 .bold {
   font-weight: bold;
@@ -11,49 +84,24 @@ html {
   white-space: nowrap;
 }
 
-#output {
-  display: flex;
-
-  #output-table-container {
-    flex: 1 1 auto ;
-
-    #output-table {
-      font-size: 0.875rem;
-
-      border-collapse: collapse;
-
-      th, td {
-        border: 1px solid #eee;
-        padding: 1px 8px;
-      }
-
-      td {
-        text-align: center;
-      }
-      th.dow-header {
-        min-width: 100px;
-      }
-      td.period-border {
-        border-top: 1.5px solid black;
-      }
-      td.dow-cell {
-        min-width: 50px;
-      }
-      .start-of-dow {
-        border-left: 1.5px solid black;
-      }
-
-    }
-  }
-
-  #remaining {
-    flex-shrink: 0;
-
-    width: 400px;
-    margin-left: 20px;
-    background: #eee;
-    padding: 8px;
-    font-size: 0.875rem;
-  }
+a {
+  color: blue;
+  cursor: pointer;
 }
 
+input[type="color"] {
+  height: 21.5px;
+}
+
+.ri-fw {
+  display: inline-block;
+}
+
+.template {
+  display: none;
+}
+
+.ms-drop ul > li.multiple label {
+  display: flex;
+  align-items: center;
+}
