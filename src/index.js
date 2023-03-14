@@ -1,10 +1,9 @@
 import './stylesheets/app.scss'
 import 'remixicon/fonts/remixicon.css';
-import {renderRemaining, renderSchedules} from './rendering';
+import {renderErrors, renderSchedules} from './rendering';
 import {checkForDuplicates, eachWithObject, shuffleArray, downloadExcel} from "./helpers";
 import {layoutSchedule} from "./logic";
 import {getFormData, loadForm} from "./form";
-import $ from "jquery";
 
 export const SPECIAL_CELLS = {
     OOF: { text: '', fullWidth: true, color: '#aaa' },
@@ -13,7 +12,7 @@ export const SPECIAL_CELLS = {
     EVENTS: { text: 'EVENTS', group: 'EVENTS', fullWidth: true, color: '#ddd' }
 }
 
-// blockGradeIds accounted for canPutClassInSlot
+// Note: blockGradeIds is accounted for canPutClassInSlot
 export const periods = [
     { id: 'PER 1', timeRange: '8:10 - 8:55', blockGradeIds: [], lunch: false, header: "HOMEROOM 7:55 - 8:10" },
     { id: 'PER 2', timeRange: '9:00 - 9:45', blockGradeIds: [], lunch: false },
@@ -32,16 +31,6 @@ export const dows = [
     { id: 'F', name: 'Fri' },
 ]
 
-// let initialGrades = [
-//     { id: 'P', color: '#568ef2', classIds: [] },
-//     { id: 'K', color: '#E06666', classIds: ['A1', 'A4', 'A5', 'A6'] },
-//     { id: '1', color: '#FFD966', classIds: ['C2', 'C3', 'C4', 'C5'] },
-//     { id: '2', color: '#FF9900', classIds: ['B2', 'B3', 'B4', 'B5'] },
-//     { id: '3', color: '#93C47D', classIds: ['B24', 'B25', 'B26'] },
-//     { id: '4', color: '#C38CDB', classIds: ['C24', 'C25', 'C26'] },
-//     { id: '5', color: '#EAD1DC', classIds: ['C21', 'C22', 'C23'] },
-//     { id: '6', color: '#00FFFF', classIds: ['B21', 'B22', 'B23'] },
-// ];
 let initialGrades = [
     { id: 'P', color: '#568ef2', classIds: ['P1'] },
     { id: 'K', color: '#E06666', classIds: ['A1', 'A4', 'A5', 'A6'] },
@@ -53,19 +42,7 @@ let initialGrades = [
     { id: '6', color: '#00FFFF', classIds: ['B22', 'B23'] },
 ];
 
-// TODO Initial list of the static ids so we can load blockGradeIds element in subjectsList
-export let grades = [
-    { id: 'P' },
-    { id: 'K' },
-    { id: '1' },
-    { id: '2' },
-    { id: '3' },
-    { id: '4' },
-    { id: '5' },
-    { id: '6' },
-];
-
-// blockDowIds accounted for in result, blockGradeIds accounted for in remaining
+// Note: blockDowIds is accounted for in result, blockGradeIds accounted for in remaining
 let initialSubjects = [
     { id: 'K-2 ART', blockDowIds: ['M','F'], blockGradeIds: ['3','4','5','6'] },
     { id: '3-6 ART', blockDowIds: ['R','F'], blockGradeIds: ['P','K','1','2'] },
@@ -76,14 +53,19 @@ let initialSubjects = [
     { id: 'SPECIAL', blockDowIds: ['F'], blockGradeIds: [] }, // TODO forces special to a single day
 ]
 
+let initialDowPriority = ['T','W','R','M','F'];
+let initialPeriodPriority = ['PER 5','PER 6','PER 4','PER 3','PER 2','PER 1','Specials Lunch'];
+let initialGradePriority = ['3','4','5','6','2','1','K','P']; // TODO Putting K last, so other grades can fill T/W/R morning first
+
+// TODO We are immediately initializing the grade ids so we can load the blockGradeIds element in subjectsList.
+//      If we ever allow the user to add/remove grades we will have to update this. If a user modifies the grades it
+//      needs to cascade to other form elements, e.g. updating the subject's "Exclude Grades" multi select.
+export let grades = initialGrades.map(grade => ({ id: grade.id }));
 export let subjects = [];
 
-export let dowPriority = ['T','W','R','M','F'];
-// export let periodPriority = ['PER 6','PER 5','Specials Lunch','PER 4','PER 3','PER 2','PER 1'];
-export let periodPriority = ['PER 5','PER 6','PER 4','PER 3','PER 2','PER 1','Specials Lunch'];
-
-// TODO Putting K last, so other grades can fill T/W/R morning first
-export let gradePriority = ['3','4','5','6','2','1','K','P'];
+export let dowPriority = [];
+export let periodPriority = [];
+export let gradePriority = [];
 
 export let result;
 export let remaining;
@@ -100,6 +82,7 @@ function initIndexes() {
     initIndex(grades);
     initIndex(subjects);
 }
+
 function initIndex(array) {
     array.forEach((record, index) => {
         record.index = index;
@@ -156,6 +139,7 @@ function initRemaining() {
         });
     });
 }
+
 function remainingKey(gradeId, subjectId, classId) {
     return `${gradeId}.${subjectId}.${classId}`
 }
@@ -173,44 +157,67 @@ export function addRemaining(gradeId, subjectId, classId) {
     };
 }
 
-function validateInputs() {
+
+function validateConfiguration() {
+    let errors = [];
+
     if (checkForDuplicates(periods.map(period => period.id))) {
-        console.error("Duplicate period ids found");
+        errors.push("Multiple periods have the same id");
     }
+
     if (checkForDuplicates(dows.map(dow => dow.id))) {
-        console.error("Duplicate dow ids found");
+        errors.push("Multiple DOWs have the same id");
     }
+
     if (checkForDuplicates(grades.map(grade => grade.id))) {
-        console.error("Duplicate grade ids found");
+        errors.push("Multiple grades have the same name");
     }
-    if (checkForDuplicates(grades.map(grade => grade.color))) {
-        console.error("Duplicate grade colors found");
+
+    // if (checkForDuplicates(grades.map(grade => grade.color))) {
+    //     errors.push("Multiple grades have the same color");
+    // }
+
+    let classIdCounts = {};
+    grades.forEach(grade => grade.classIds.forEach(classId => {
+        if (classIdCounts[classId] === undefined) { classIdCounts[classId] = 0; }
+        classIdCounts[classId] += 1;
+    }));
+    for (let [id, count] of Object.entries(classIdCounts)) {
+        if (count > 1) {
+            errors.push(`There are multiple classes named ${id}`);
+        }
     }
-    let allClassIds = [];
-    grades.forEach(grade => grade.classIds.forEach(classId => allClassIds.push(classId)));
-    if (checkForDuplicates(allClassIds)) {
-        console.error("Duplicates class ids found");
-    }
+
     if (checkForDuplicates(subjects.map(subject => subject.id))) {
-        console.error("Duplicate subject ids found");
+        errors.push("Multiple subjects have the same name");
     }
-    dowPriority.forEach(dow => checkForeignKey(dow, dows));
-    periodPriority.forEach(period => checkForeignKey(period, periods));
+    if (subjects.some(subject => subject.id === '')) {
+        errors.push("Subjects cannot have a blank name");
+    }
+
+    dowPriority = initialDowPriority.filter(priority => dows.some(dow => dow.id === priority));
+    periodPriority = initialPeriodPriority.filter(priority => periods.some(period => period.id === priority));
+    gradePriority = initialGradePriority.filter(priority => grades.some(grade => grade.id === priority));
+
+    return errors;
 }
 
-function checkForeignKey(id, table) {
-    if (!table.some(record => record.id === id)) {
-        console.error(`Could not find id '${id}' in the following table:`)
-        console.error(table)
-    }
-}
+// function checkForeignKey(id, table, tableName, errors) {
+//     if (!table.some(record => record.id === id)) {
+//         errors.push(`Foreign key ${id} was not found in ${tableName} table`);
+//     }
+// }
 
 export function generate() {
     const formData = getFormData();
     grades = formData.grades;
     subjects = formData.subjects;
 
-    validateInputs();
+    let errors = validateConfiguration();
+    if (errors.length) {
+        renderErrors(errors);
+        return;
+    }
 
     initIndexes();
     initLookups();
@@ -221,33 +228,15 @@ export function generate() {
 
     layoutSchedule();
     renderSchedules();
-    renderRemaining();
+
+    for (let [remainsId, remains] of Object.entries(remaining)) {
+        errors.push(`${remains.subject} had no remaining slots for class ${remains.class} (grade ${remains.grade})`)
+    }
+
+    renderErrors(errors);
 }
 
 loadForm({
     grades: initialGrades,
     subjects: initialSubjects
 });
-
-// const interval = setInterval(() => {
-//     generate();
-//
-//     let badLunch = false;
-//     periods.forEach(period => {
-//         if (period.lunch) { return; }
-//         if (badLunch) { return; }
-//
-//         result.forEach(dow => {
-//             if (badLunch) { return; }
-//             dow[period.index].forEach(cell => {
-//                 if (cell && cell.text === 'LUNCH') {
-//                     badLunch = true;
-//                 }
-//             })
-//         })
-//     })
-//
-//     if (badLunch) {
-//         clearInterval(interval);
-//     }
-// }, 50);

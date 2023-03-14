@@ -10,7 +10,7 @@ let outputTabsInitialized = false;
 let currentTabIndex = 0;
 let $masterTable, $subjectsTable;
 
-const $remaining = $('#remaining');
+const $errors = $('#errors');
 
 const SHOW_GROUP_INFO = true;
 
@@ -344,18 +344,20 @@ function groupInfo(cell, dowIndex, periodIndex, subjectIndex) {
     }
 }
 
-export function renderRemaining() {
-    $remaining.empty();
+export function renderErrors(errors) {
+    $errors.empty();
 
-    $('<p>', {
-        html: 'Errors:'
-    }).appendTo($remaining);
-
-    for (let [remainsId, remains] of Object.entries(remaining)) {
+    if (errors.length) {
         $('<p>', {
-            html: JSON.stringify(remains)
-        }).appendTo($remaining);
+            html: 'Errors found:'
+        }).appendTo($errors);
+
+        errors.forEach(error => {
+            $('<p>', {
+                html: `&bull; ${error}`
+            }).appendTo($errors);
+        })
     }
 
-    $remaining.toggle(Object.keys(remaining).length > 0);
+    $errors.toggle(errors.length > 0);
 }
