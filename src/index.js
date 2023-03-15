@@ -238,7 +238,8 @@ function initPriorities() {
     subjectPriority = shuffleArray(subjects.map(subject => subject.id));
 }
 
-export function generate() {
+export function generate(isTrial) {
+    console.log('generate... isTrial? ', isTrial);
     const formData = getFormData();
     grades = formData.grades;
     subjects = formData.subjects;
@@ -246,7 +247,7 @@ export function generate() {
     let errors = validateConfiguration();
     if (errors.length) {
         renderErrors(errors);
-        return;
+        return errors;
     }
 
     initPriorities();
@@ -257,14 +258,41 @@ export function generate() {
     initRemaining();
 
     layoutSchedule();
-    renderSchedules();
 
     // Log errors for any slots remaining
     for (let [remainsId, remains] of Object.entries(remaining)) {
-        errors.push(`${remains.subject} had no remaining slots for class ${remains.class} (grade ${remains.grade})`)
+        errors.push(`${remains.subject} had no available times for class ${remains.class} (grade ${remains.grade})`)
     }
 
+    // Do not bother rendering if there are errors and this is the first attempt of many
+    if (isTrial && errors.length) { return errors; }
+
+    renderSchedules();
     renderErrors(errors);
+
+    return errors;
+}
+
+/**
+ * Runs the generate function, but if errors occur it runs it again, up to n times total.
+ *
+ * This can be useful to reduce the likelyhood of a collision. E.g. if there is a 10% chance for a collision, sending
+ * n = 2 will make it a 1% chance.
+ *
+ * Don't pass a value of n that's too high tho, otherwise it may take a long time to generate if the error % is high.
+ */
+export function generateN(n = 1) {
+    let errors;
+
+    for (let i = 0; i < n; i++) {
+        errors = generate(i < n - 1);
+
+        if (!errors.length) {
+            return [];
+        }
+    }
+
+    return errors;
 }
 
 loadForm({

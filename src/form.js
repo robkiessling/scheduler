@@ -2,7 +2,7 @@ import $ from "jquery";
 import 'jquery-ui/ui/widgets/sortable.js';
 import 'multiple-select/dist/multiple-select.js';
 
-import {dows, generate, grades, periods} from "./index";
+import {dows, generateN, grades, periods} from "./index";
 
 export function loadForm(data) {
     if (data.grades) {
@@ -12,7 +12,7 @@ export function loadForm(data) {
         subjectsList.load(data.subjects);
     }
 
-    generate();
+    generateN(2);
 }
 
 export function getFormData() {
@@ -23,7 +23,7 @@ export function getFormData() {
 }
 
 $('#generate').off('click').on('click', () => {
-    generate();
+    generateN(2);
 });
 
 

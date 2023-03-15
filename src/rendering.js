@@ -50,9 +50,14 @@ export function renderSchedules() {
     $masterTable = createTab(`output-tab-master`, 'Master Schedule').$table;
     renderMasterSchedule($masterTable);
 
-    $subjectsTable = createTab(`output-tab-subjects`, 'Teacher Schedules').$table;
-    renderSubjectSchedules($subjectsTable);
+    $subjectsTable = createTab(`output-tab-subjects`, 'By Subject').$table;
+    renderAllSubjectsSchedule($subjectsTable);
 
+    subjects.forEach(subject => {
+        let { $table } = createTab(`output-tab-${subject.id.replace(/\s/g, "")}`, subject.id);
+        renderSubjectSchedule($table, subject);
+    });
+    
     $output.tabs({
         active: currentTabIndex,
         activate: (event, ui) => {
@@ -68,31 +73,16 @@ export function renderSchedules() {
 
     $download.on('click', (evt) => {
         evt.preventDefault();
-        switch(currentTabIndex) {
-            case 0:
-                downloadExcel($masterTable.get(0), 'Master Schedule');
-                break;
-            case 1:
-                downloadExcel($subjectsTable.get(0), 'Teacher Schedules');
-                break;
-            default:
-                console.error("Cannot download tab index: ", currentTabIndex);
-        }
+
+        let $table = $output.find('.output-table').eq(currentTabIndex);
+        downloadExcel($table.get(0), $table.data('tab-name'));
     });
 
     updateDownloadName();
 
+    // Note: This doesn't change dynamically anymore, so we don't actually need to put it in a method and call it every tab change
     function updateDownloadName() {
-        switch(currentTabIndex) {
-            case 0:
-                $download.html("<span class='ri ri-fw ri-file-download-line'></span> <span class='text'>Download Master Schedule</span>")
-                break;
-            case 1:
-                $download.html("<span class='ri ri-fw ri-file-download-line'></span> <span class='text'>Download Teacher Schedules</span>")
-                break;
-            default:
-                $download.html("<span class='ri ri-fw ri-file-download-line'></span> <span class='text'>Download</span>")
-        }
+        $download.html("<span class='ri ri-fw ri-file-download-line'></span> <span class='text'>Download</span>")
     }
 
     outputTabsInitialized = true;
@@ -111,7 +101,7 @@ function createTab(tabId, tabName) {
     // }).appendTo($tabPanel);
 
     $('<div>', {
-        html: `<table class='output-table' id='${tabId}-table'></table>`
+        html: `<table class='output-table' id='${tabId}-table' data-tab-name="${tabName}"></table>`
     }).appendTo($tabPanel);
 
     return {
@@ -245,15 +235,19 @@ function renderMasterSchedule($table) {
     })
 }
 
+function renderSubjectSchedule($table, subject) {
+    const $tbody = $('<tbody>').appendTo($table);
+    mergeSubjectSchedule($tbody, subject);
+}
 
-function renderSubjectSchedules($table) {
+function renderAllSubjectsSchedule($table) {
     const $tbody = $('<tbody>').appendTo($table);
     subjects.forEach(subject => {
-        addSubjectSchedule($tbody, subject);
+        mergeSubjectSchedule($tbody, subject);
     });
 }
 
-function addSubjectSchedule($tbody, subject) {
+function mergeSubjectSchedule($tbody, subject) {
     // -------------------------------------------- subject name
     let $tr = $('<tr>').appendTo($tbody);
     $('<td>', {

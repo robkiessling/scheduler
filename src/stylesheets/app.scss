@@ -29,7 +29,9 @@ html {
 
 }
 
-
+#output-tabs {
+  padding-right: 120px; // because of download link
+}
 
 .output-table {
   border-collapse: collapse;
@@ -39,6 +41,8 @@ html {
     border-left: thin solid #eee;
     padding: 1px 8px;
   }
+
+  //font-size: 0.875rem;
 }
 
 #inputs {
