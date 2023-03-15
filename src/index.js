@@ -42,18 +42,18 @@ let initialGrades = [
     { id: '6', color: '#00FFFF', classIds: ['B22', 'B23'] },
 ];
 
-// Note: blockDowIds is accounted for in result, blockGradeIds accounted for in remaining
+// Note: blockTods is accounted for in result, blockGradeIds accounted for in remaining
 let initialSubjects = [
-    { id: 'K-2 ART', blockDowIds: ['M','F'], blockGradeIds: ['3','4','5','6'] },
-    { id: '3-6 ART', blockDowIds: ['R','F'], blockGradeIds: ['P','K','1','2'] },
-    { id: 'MUSIC', blockDowIds: [], blockGradeIds: [] },
-    { id: 'PE', blockDowIds: [], blockGradeIds: [] },
-    { id: 'LIBRARY', blockDowIds: [], blockGradeIds: [] },
-    { id: 'LANGUAGE', blockDowIds: [], blockGradeIds: [] },
-    { id: 'SPECIAL', blockDowIds: ['F'], blockGradeIds: [] }, // TODO forces special to a single day
+    { id: 'K-2 ART', blockTods: ['M','F'], blockGradeIds: ['3','4','5','6'] },
+    { id: '3-6 ART', blockTods: [{dowId: 'W', periodIds: ['PER 1','PER 2']},'R','F'], blockGradeIds: ['P','K','1','2'] },
+    { id: 'MUSIC', blockTods: [], blockGradeIds: [] },
+    { id: 'PE', blockTods: [], blockGradeIds: [] },
+    { id: 'LIBRARY', blockTods: [], blockGradeIds: [] },
+    { id: 'LANGUAGE', blockTods: [], blockGradeIds: [] },
+    { id: 'SPECIAL', blockTods: ['F'], blockGradeIds: [] },
 ]
 
-let initialDowPriority = ['T','W','R','M','F'];
+let initialDowPriority = [['T','W','R'], ['M','F']];
 let initialPeriodPriority = ['PER 5','PER 6','PER 4','PER 3','PER 2','PER 1','Specials Lunch'];
 
 // TODO We are immediately initializing the grade ids so we can load the blockGradeIds element in subjectsList.
@@ -119,12 +119,30 @@ function initResult() {
         periods.forEach(period => {
             let periodResult = [];
             subjects.forEach(subject => {
-                periodResult.push(subject.blockDowIds.includes(dow.id) ? SPECIAL_CELLS.OOF : null);
+                periodResult.push(isSubjectBlocked(subject, dow, period) ? SPECIAL_CELLS.OOF : null);
             });
             dowResult.push(periodResult);
         });
         result.push(dowResult);
     });
+}
+
+function isSubjectBlocked(subject, dow, period) {
+    let blocked = false;
+
+    subject.blockTods.forEach(tod => {
+        if (blocked) { return; }
+
+        // note: tod can be a string like 'W' or an object of times-of-day, like {dowId: 'W', periodIds: ['PER 1','PER 2']}
+        if (typeof tod === 'string' && tod === dow.id) {
+            blocked = true;
+        }
+        else if (tod.dowId === dow.id && tod.periodIds.includes(period.id)) {
+            blocked = true;
+        }
+    });
+
+    return blocked;
 }
 
 function initRemaining() {
@@ -199,8 +217,10 @@ function validateConfiguration() {
 }
 
 function initPriorities() {
-    dowPriority = initialDowPriority.filter(priority => dows.some(dow => dow.id === priority));
-    periodPriority = initialPeriodPriority.filter(priority => periods.some(period => period.id === priority));
+    // dowPriority = initialDowPriority.filter(priority => dows.some(dow => dow.id === priority));
+    // periodPriority = initialPeriodPriority.filter(priority => periods.some(period => period.id === priority));
+    dowPriority = initialDowPriority;
+    periodPriority = initialPeriodPriority;
 
     gradePriority = shuffleArray(grades.map(grade => grade.id));
     subjectPriority = shuffleArray(subjects.map(subject => subject.id));

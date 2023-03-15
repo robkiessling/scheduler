@@ -132,7 +132,12 @@ input[type="color"] {
   display: none;
 }
 
-.ms-drop ul > li label {
-  display: flex;
-  align-items: center;
+.ms-drop input[type="radio"], .ms-drop input[type="checkbox"] {
+  margin-top: inherit;
+}
+
+.indent-ms {
+  .ms-drop ul > li.multiple {
+    margin-left: 1rem;
+  }
 }

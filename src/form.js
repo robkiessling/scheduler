@@ -2,8 +2,40 @@ import $ from "jquery";
 import 'jquery-ui/ui/widgets/sortable.js';
 import 'multiple-select/dist/multiple-select.js';
 
-import {dows, generate, grades} from "./index";
+import {dows, generate, grades, periods} from "./index";
 
+export function loadForm(data) {
+    if (data.grades) {
+        gradesList.load(data.grades);
+    }
+    if (data.subjects) {
+        subjectsList.load(data.subjects);
+    }
+
+    generate();
+}
+
+export function getFormData() {
+    return {
+        grades: gradesList.data(),
+        subjects: subjectsList.data()
+    }
+}
+
+$('#generate').off('click').on('click', () => {
+    generate();
+});
+
+
+/**
+ * An EditableList is a table where rows can be added, deleted, and reordered. Each row typically has one or more form inputs.
+ *
+ * `config` options:
+ * - rowSetup (optional) callback triggered after the empty row element is added to the DOM
+ * - rowLoaded (optional) callback triggered after the row's data has been inserted into the DOM
+ * - deserializer (optional) callback to convert serialized rowData into a format that can be inserted into the DOM
+ * - serializer (optional) callback to convert the DOM data into a serialized format for outside processing
+ */
 export class EditableList {
     constructor($container, config) {
         this.$container = $container;
@@ -35,7 +67,7 @@ export class EditableList {
             return obj;
         }).get();
 
-        return this.config.formatter ? this.config.formatter(data) : data;
+        return this.config.serializer ? this.config.serializer(data) : data;
     }
 
     setupAdd() {
@@ -60,50 +92,35 @@ export class EditableList {
     addRow(data) {
         let $row = this.$template.clone();
         $row.removeClass('template');
+        $row.appendTo(this.$tbody);
 
         if (this.config.rowSetup) {
             this.config.rowSetup($row, data);
         }
 
         if (data) {
+            if (this.config.deserializer) {
+                data = this.config.deserializer($.extend(true, {}, data));
+            }
+
             for (let [name, value] of Object.entries(data)) {
                 $row.find(`[name="${name}"]`).val(value);
             }
         }
 
-        $row.appendTo(this.$tbody);
+        if (this.config.rowLoaded) {
+            this.config.rowLoaded($row);
+        }
     }
 
-}
-
-export function loadForm(data) {
-    if (data.grades) {
-        gradesList.load(data.grades.map(grade => {
-            let clone = $.extend(true, {}, grade);
-            clone.classIds = clone.classIds.join(', ');
-            return clone;
-        }));
-    }
-    if (data.subjects) {
-        // subjectsList.load(data.subjects.map(subject => {
-        //     let clone = $.extend(true, {}, subject);
-        //     return clone;
-        // }));
-        subjectsList.load(data.subjects);
-    }
-
-    generate();
-}
-
-export function getFormData() {
-    return {
-        grades: gradesList.data(),
-        subjects: subjectsList.data()
-    }
 }
 
 const gradesList = new EditableList($('#grades-list'), {
-    formatter: data => {
+    deserializer: rowData => {
+        rowData.classIds = rowData.classIds.join(', ');
+        return rowData;
+    },
+    serializer: data => {
         data.forEach(row => {
             row.classIds = row.classIds.split(',').map(classId => classId.trim());
             // row.classIds = row.classIds.map(classId => `${classId} (${row.id})`);
@@ -113,36 +130,100 @@ const gradesList = new EditableList($('#grades-list'), {
 });
 
 const subjectsList = new EditableList($('#subjects-list'), {
-    // formatter: data => {
-    //     data.forEach(row => {
-    //     });
-    //     return data;
-    // },
-    rowSetup: ($row, data) => {
-        let $blockDowIds = $row.find('[name="blockDowIds"]');
-        dows.forEach(dow => {
-            $('<option>', { html: dow.name, value: dow.id }).appendTo($blockDowIds);
-        })
-        window.setTimeout(() => {
-            $blockDowIds.multipleSelect({
-                minimumCountSelected: 100,
-                displayValues: true
+    deserializer: rowData => {
+        // Converts blockTods values such as 'W' or {dowId: 'W', periodIds: ['PER 1','PER 2']} into string options that
+        // can be used in the multipleSelect
+        let tods = [];
+        rowData.blockTods.forEach(tod => {
+            if (typeof tod === 'string') {
+                periods.forEach(period => tods.push(writeTodValue(tod, period.id)));
+            }
+            else {
+                tod.periodIds.forEach(periodId => tods.push(writeTodValue(tod.dowId, periodId)));
+            }
+        });
+        console.log(tods);
+        rowData.blockTods = tods;
+
+        return rowData;
+    },
+    serializer: data => {
+        // Converts string options from the multipleSelect into blockTod values such as 'W' or {dowId: 'W', periodIds: ['PER 1','PER 2']}
+        data.forEach(rowData => {
+            let todLookup = {};
+            rowData.blockTods.forEach(tod => {
+                let { dowId, periodId } = readTodValue(tod);
+                if (todLookup[dowId] === undefined) { todLookup[dowId] = []; }
+                todLookup[dowId].push(periodId);
             });
-        }, 1);
-        
+
+            let blockTods = [];
+            for (let [dowId, periodIds] of Object.entries(todLookup)) {
+                // If all periods are selected, consolidate into just the dowId
+                blockTods.push(periodIds.length === periods.length ? dowId : {dowId: dowId, periodIds: periodIds});
+            }
+
+            rowData.blockTods = blockTods;
+        });
+        return data;
+    },
+    rowSetup: ($row, data) => {
+        let $blockTods = $row.find('[name="blockTods"]');
+        dows.forEach(dow => {
+            let $optGroup = $(`<optgroup label="${dow.name}">`).appendTo($blockTods);
+            periods.forEach(period => {
+                $('<option>', { html: period.id, value: writeTodValue(dow.id, period.id) }).appendTo($optGroup);
+            });
+        });
+
+        // Custom text to display on the <select>
+        function refreshBlockTods() {
+            let numPeriods = $blockTods.multipleSelect('getSelects').length;
+            let text = numPeriods ? `${numPeriods} periods` : '';
+            $blockTods.siblings('.ms-parent').find('.ms-choice span:first-child').html(text);
+        }
+
+        $blockTods.multipleSelect({
+            multiple: true,
+            minimumCountSelected: 0,
+            dropWidth: 450,
+            multipleWidth: 110,
+            onClick: () => refreshBlockTods(),
+            onAfterCreate: () => refreshBlockTods(),
+            onOptgroupClick: () => refreshBlockTods(),
+        });
+
         let $blockGradeIds = $row.find('[name="blockGradeIds"]');
         grades.forEach(grade => {
             $('<option>', { html: grade.id, value: grade.id }).appendTo($blockGradeIds);
         })
-        window.setTimeout(() => {
-            $blockGradeIds.multipleSelect({
-                minimumCountSelected: 100,
-                displayValues: true
-            });
-        }, 1);
-    }
+        $blockGradeIds.multipleSelect({
+            multiple: true,
+            minimumCountSelected: 100,
+            displayValues: true
+        });
+    },
+    rowLoaded: ($row) => {
+        $row.find('[name="blockTods"]').multipleSelect('refresh');
+        $row.find('[name="blockGradeIds"]').multipleSelect('refresh');
+    },
 });
 
-$('#generate').off('click').on('click', () => {
-    generate();
-})
+
+/**
+ * Converts blockTods values such as 'W' or {dowId: 'W', periodIds: ['PER 1','PER 2']} into string options that
+ * can be used in the multipleSelect
+ */
+const todSeparator = '__##__'; // random separator string that won't be found in an ID
+
+function writeTodValue(dowId, periodId) {
+    return `${dowId}${todSeparator}${periodId}`
+}
+
+function readTodValue(val) {
+    let [dowId, periodId] = val.split(todSeparator);
+    return {
+        dowId: dowId,
+        periodId: periodId
+    }
+}

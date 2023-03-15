@@ -236,32 +236,45 @@ function removeClassFromSlot(klass, dow, period, subject) {
 /**
  * The following iterators iterate through the records in a priority order. If the callback returns false, iteration
  * will cease and the iterator will also return false.
+ *
+ * The priority queue can have nested Array elements. A nested Array element means evaluate the Array at an equal priority.
+ * For example, if the priority queue is: ['T','W','R', ['M','F']]
+ * Iteration will proceed as:
+ *   1) T
+ *   2) W
+ *   3) R
+ *   4) 50% chance of either M or F
+ *   5) whichever M or F wasn't used in step 4
  */
+function iteratePriorityQueue(priorities, lookup, callback) {
+    for(let i = 0; i < priorities.length; i++) {
+        let priority = priorities[i];
+        if (Array.isArray(priority)) {
+            shuffleArray(priority);
+            for (let j = 0; j < priority.length; j++) {
+                const returnVal = callback(lookup[priority[j]], i+j);
+                if (returnVal === false) { return false; }
+            }
+        }
+        else {
+            const returnVal = callback(lookup[priority], i);
+            if (returnVal === false) { return false; }
+        }
+    }
+}
 
 function iterateGrades(callback) {
-    for(let i = 0; i < gradePriority.length; i++) {
-        const returnVal = callback(gradeLookup[gradePriority[i]], i);
-        if (returnVal === false) { return false; }
-    }
+    iteratePriorityQueue(gradePriority, gradeLookup, callback);
 }
 
 function iterateDows(callback) {
-    for(let i = 0; i < dowPriority.length; i++) {
-        const returnVal = callback(dowLookup[dowPriority[i]], i);
-        if (returnVal === false) { return false; }
-    }
+    iteratePriorityQueue(dowPriority, dowLookup, callback);
 }
 
 function iteratePeriods(callback) {
-    for(let i = 0; i < periodPriority.length; i++) {
-        const returnVal = callback(periodLookup[periodPriority[i]], i);
-        if (returnVal === false) { return false; }
-    }
+    iteratePriorityQueue(periodPriority, periodLookup, callback);
 }
 
 function iterateSubjects(callback) {
-    for(let i = 0; i < subjectPriority.length; i++) {
-        const returnVal = callback(subjectLookup[subjectPriority[i]], i);
-        if (returnVal === false) { return false; }
-    }
+    iteratePriorityQueue(subjectPriority, subjectLookup, callback);
 }
