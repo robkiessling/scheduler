@@ -1,18 +1,10 @@
 import {
     SPECIAL_CELLS,
     result,
-    subjects,
-    gradePriority,
-    dowLookup,
-    periodLookup,
-    gradeLookup,
-    dowPriority,
-    periodPriority,
-    periods,
-    isRemaining,
-    remaining,
-    classLookup,
-    dows, removeRemaining, addRemaining
+    periods, subjects,
+    dowPriority, periodPriority, gradePriority, subjectPriority,
+    dowLookup, periodLookup, gradeLookup, subjectLookup, classLookup,
+    remaining, isRemaining, removeRemaining, addRemaining
 } from "./index";
 import {permutations, shuffleArray} from "./helpers";
 
@@ -148,10 +140,12 @@ function randomizeRemaining() {
     shuffleArray(remainingArray);
     remainingArray.forEach(remains => putClassInNextOpenSlot(classLookup[remains.class]));
 
-    // In order:
-    // for (let [remainsId, remains] of Object.entries(remaining)) {
-    //     putClassInNextOpenSlot(remains.class);
-    // }
+    // Try to keep grades together:
+    // Object.values(remaining).sort((a, b) => {
+    //     return a.grade.localeCompare(b.grade) || a.subject.localeCompare(b.subject) || a.class.localeCompare(b.class);
+    // }).forEach(remains => {
+    //     putClassInNextOpenSlot(classLookup[remains.class]);
+    // });
 }
 
 function putClassInNextOpenSlot(klass) {
@@ -266,8 +260,8 @@ function iteratePeriods(callback) {
 }
 
 function iterateSubjects(callback) {
-    for(let i = 0; i < subjects.length; i++) {
-        const returnVal = callback(subjects[i], i);
+    for(let i = 0; i < subjectPriority.length; i++) {
+        const returnVal = callback(subjectLookup[subjectPriority[i]], i);
         if (returnVal === false) { return false; }
     }
 }

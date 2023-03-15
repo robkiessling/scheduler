@@ -55,7 +55,6 @@ let initialSubjects = [
 
 let initialDowPriority = ['T','W','R','M','F'];
 let initialPeriodPriority = ['PER 5','PER 6','PER 4','PER 3','PER 2','PER 1','Specials Lunch'];
-let initialGradePriority = ['3','4','5','6','2','1','K','P']; // TODO Putting K last, so other grades can fill T/W/R morning first
 
 // TODO We are immediately initializing the grade ids so we can load the blockGradeIds element in subjectsList.
 //      If we ever allow the user to add/remove grades we will have to update this. If a user modifies the grades it
@@ -66,6 +65,7 @@ export let subjects = [];
 export let dowPriority = [];
 export let periodPriority = [];
 export let gradePriority = [];
+export let subjectPriority = [];
 
 export let result;
 export let remaining;
@@ -195,18 +195,16 @@ function validateConfiguration() {
         errors.push("Subjects cannot have a blank name");
     }
 
-    dowPriority = initialDowPriority.filter(priority => dows.some(dow => dow.id === priority));
-    periodPriority = initialPeriodPriority.filter(priority => periods.some(period => period.id === priority));
-    gradePriority = initialGradePriority.filter(priority => grades.some(grade => grade.id === priority));
-
     return errors;
 }
 
-// function checkForeignKey(id, table, tableName, errors) {
-//     if (!table.some(record => record.id === id)) {
-//         errors.push(`Foreign key ${id} was not found in ${tableName} table`);
-//     }
-// }
+function initPriorities() {
+    dowPriority = initialDowPriority.filter(priority => dows.some(dow => dow.id === priority));
+    periodPriority = initialPeriodPriority.filter(priority => periods.some(period => period.id === priority));
+
+    gradePriority = shuffleArray(grades.map(grade => grade.id));
+    subjectPriority = shuffleArray(subjects.map(subject => subject.id));
+}
 
 export function generate() {
     const formData = getFormData();
@@ -219,16 +217,17 @@ export function generate() {
         return;
     }
 
+    initPriorities();
+
     initIndexes();
     initLookups();
     initResult();
     initRemaining();
 
-    shuffleArray(gradePriority);
-
     layoutSchedule();
     renderSchedules();
 
+    // Log errors for any slots remaining
     for (let [remainsId, remains] of Object.entries(remaining)) {
         errors.push(`${remains.subject} had no remaining slots for class ${remains.class} (grade ${remains.grade})`)
     }
