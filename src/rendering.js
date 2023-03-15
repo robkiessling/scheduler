@@ -1,14 +1,13 @@
 
 import $ from "jquery";
 import 'jquery-ui/ui/widgets/tabs.js';
-import {dows, periods, result, subjects} from "./index";
+import {classLookup, dows, gradeLookup, grades, periods, result, SPECIAL_CELLS, subjects} from "./index";
 import {downloadExcel} from "./helpers";
 
 
 const $output = $('#outputs');
 let outputTabsInitialized = false;
 let currentTabIndex = 0;
-let $masterTable, $subjectsTable;
 
 const $errors = $('#errors');
 
@@ -50,11 +49,14 @@ export function renderSchedules() {
 
     $('<ul>', { id: "output-tabs" }).appendTo($output);
 
-    $masterTable = createTab(`output-tab-master`, 'Master Schedule').$table;
+    let $masterTable = createTab(`output-tab-master`, 'Master Schedule').$table;
     renderMasterSchedule($masterTable);
 
-    $subjectsTable = createTab(`output-tab-subjects`, 'By Subject').$table;
+    let $subjectsTable = createTab(`output-tab-subjects`, 'By Subject').$table;
     renderAllSubjectsSchedule($subjectsTable);
+
+    let $classesTable = createTab(`output-tab-classes`, 'By Class').$table;
+    renderAllClassesSchedule($classesTable);
 
     subjects.forEach(subject => {
         let { $table } = createTab(`output-tab-${subject.id.replace(/\s/g, "")}`, subject.id);
@@ -112,6 +114,23 @@ function createTab(tabId, tabName) {
     }
 }
 
+function addPeriodHeader($tbody, period, colspan, showEmptyHeaders = true) {
+    if (period.header) {
+        let isEmpty = period.header.trim().length === 0;
+        if (isEmpty && !showEmptyHeaders) { return; }
+
+        let $tr = $('<tr>', {}).appendTo($tbody);
+
+        let height = isEmpty ? `height:3px;` : '';
+
+        $('<td>', {
+            html: period.header,
+            style: `${bgColor(isEmpty ? EMPTY_PERIOD_HEADER_COLOR : PERIOD_HEADER_COLOR)}` +
+                `${ALIGN_CENTER}${BOTTOM_BORDER}${LEFT_BORDER}${RIGHT_BORDER}${height}`,
+            colspan: colspan
+        }).appendTo($tr);
+    }
+}
 
 function renderMasterSchedule($table) {
     // -------------------------------------------- <thead> element
@@ -137,15 +156,7 @@ function renderMasterSchedule($table) {
     const $tbody = $('<tbody>').appendTo($table);
     periods.forEach((period, periodIndex) => {
         // -------------------------------------------- period header row
-        if (period.header) {
-            $tr = $('<tr>', {}).appendTo($tbody);
-            $('<td>', {
-                html: period.header,
-                style: `${bgColor(period.header.trim().length ? PERIOD_HEADER_COLOR : EMPTY_PERIOD_HEADER_COLOR)}` +
-                    `${ALIGN_CENTER}${BOTTOM_BORDER}${LEFT_BORDER}${RIGHT_BORDER}`,
-                colspan: 2 + (SHOW_GROUP_INFO ? dows.length * 2 : dows.length)
-            }).appendTo($tr);
-        }
+        addPeriodHeader($tbody, period, 2 + (SHOW_GROUP_INFO ? dows.length * 2 : dows.length));
 
         // -------------------------------------------- normal subject rows
         subjects.forEach((subject, subjectIndex) => {
@@ -239,6 +250,95 @@ function renderMasterSchedule($table) {
     })
 }
 
+function renderAllClassesSchedule($table) {
+    const $tbody = $('<tbody>').appendTo($table);
+
+    grades.forEach(grade => {
+        grade.classIds.forEach(classId => {
+            mergeClassSchedule($tbody, classLookup[classId]);
+        });
+    })
+}
+
+function mergeClassSchedule($tbody, klass) {
+    // -------------------------------------------- subject name
+    let $tr = $('<tr>').appendTo($tbody);
+    $('<td>', {
+        html: `${klass.id} Schedule (Grade ${klass.gradeId})`,
+        style: `${BOLD}border-top:none;border-left:none;`,
+        colspan: 1 + dows.length
+    }).appendTo($tr);
+
+    // -------------------------------------------- header
+    $tr = $('<tr>').appendTo($tbody);
+
+    // blank cell over period names
+    $('<td>', { style: `${BOTTOM_BORDER}${LEFT_BORDER}${RIGHT_BORDER}${TOP_BORDER}` }).appendTo($tr);
+
+    // dow header cells
+    dows.forEach(dow => {
+        $('<td>', {
+            html: dow.name,
+            style: `${BOLD}${DOW_FULL_WIDTH}${ALIGN_CENTER}${RIGHT_BORDER}${BOTTOM_BORDER}${TOP_BORDER}`
+        }).appendTo($tr);
+    });
+
+    // -------------------------------------------- body
+    periods.forEach((period, periodIndex) => {
+        // -------------------------------------------- period header row
+        addPeriodHeader($tbody, period, 1 + dows.length, false);
+
+        // -------------------------------------------- normal class rows
+        let style = `${DOW_FULL_WIDTH}${ALIGN_CENTER}${RIGHT_BORDER}${BOTTOM_BORDER}`;
+
+        $tr = $('<tr>').appendTo($tbody);
+
+        // period name
+        $('<td>', {
+            html: `${period.id}\n${period.timeRange}`,
+            style: `${style}${PRE_LINE}${LEFT_BORDER}`
+        }).appendTo($tr);
+
+        dows.forEach((dow, dowIndex) => {
+            if (period.lunch && period.blockGradeIds.includes(klass.gradeId)) {
+                $('<td>', {
+                    html: SPECIAL_CELLS.LUNCH.text,
+                    style: `${style}${bgColor(SPECIAL_CELLS.LUNCH.color)}`
+                }).appendTo($tr);
+                return;
+            }
+
+            // scan all subjects, see if klass is in one of them
+            let matchingSubject = false;
+            let isGrouped = false;
+            subjects.forEach(subject => {
+                let cell = result[dowIndex][periodIndex][subject.index];
+                if (cell && cell.classId === klass.id) {
+                    matchingSubject = subject;
+                    if (cell.group) {
+                        isGrouped = true;
+                    }
+                }
+            });
+
+            $('<td>', {
+                html: matchingSubject ? matchingSubject.id : '',
+                style: `${style}${isGrouped ? BOLD : ''}` +
+                    `${bgColor(matchingSubject ? gradeLookup[klass.gradeId].color : '')}`
+            }).appendTo($tr);
+        });
+    });
+
+    // -------------------------------------------- extra space line
+
+    $tr = $('<tr>').appendTo($tbody);
+    $('<td>', {
+        html: '&nbsp;',
+        style: `${ALIGN_CENTER}border-top:none;border-left:none;`,
+        colspan: 1 + dows.length
+    }).appendTo($tr);
+}
+
 function renderSubjectSchedule($table, subject) {
     const $tbody = $('<tbody>').appendTo($table);
     mergeSubjectSchedule($tbody, subject);
@@ -260,6 +360,8 @@ function mergeSubjectSchedule($tbody, subject) {
         colspan: 1 + dows.length
     }).appendTo($tr);
 
+    // -------------------------------------------- header
+
     $tr = $('<tr>').appendTo($tbody);
 
     // blank cell over period names
@@ -273,18 +375,13 @@ function mergeSubjectSchedule($tbody, subject) {
         }).appendTo($tr);
     });
 
+    // -------------------------------------------- body
+
     periods.forEach((period, periodIndex) => {
         // -------------------------------------------- period header row
-        if (period.header) {
-            $tr = $('<tr>', {}).appendTo($tbody);
-            $('<td>', {
-                html: period.header,
-                style: `${bgColor(period.header.trim().length ? PERIOD_HEADER_COLOR : EMPTY_PERIOD_HEADER_COLOR)}` +
-                    `${ALIGN_CENTER}${BOTTOM_BORDER}${LEFT_BORDER}${RIGHT_BORDER}`,
-                colspan: 1 + dows.length
-            }).appendTo($tr);
-        }
+        addPeriodHeader($tbody, period, 1 + dows.length, false);
 
+        // -------------------------------------------- normal subject rows
         let style = `${DOW_FULL_WIDTH}${ALIGN_CENTER}${RIGHT_BORDER}${BOTTOM_BORDER}`;
 
         $tr = $('<tr>').appendTo($tbody);
@@ -292,7 +389,6 @@ function mergeSubjectSchedule($tbody, subject) {
         // period name
         $('<td>', {
             html: `${period.id}\n${period.timeRange}`,
-            // style: `${style}${NOWRAP}${LEFT_BORDER}`
             style: `${style}${PRE_LINE}${LEFT_BORDER}`
         }).appendTo($tr);
 
@@ -305,6 +401,8 @@ function mergeSubjectSchedule($tbody, subject) {
             }).appendTo($tr);
         });
     });
+
+    // -------------------------------------------- extra space line
 
     $tr = $('<tr>').appendTo($tbody);
     $('<td>', {

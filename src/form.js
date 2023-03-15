@@ -13,6 +13,8 @@ export function loadForm(data) {
     if (data.subjects) {
         subjectsList.load(data.subjects);
     }
+
+    generateN(1);
 }
 
 export function getFormData() {

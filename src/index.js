@@ -272,4 +272,3 @@ export function generateN(n = 1) {
 }
 
 loadStateFromLocal();
-generateN(1);
