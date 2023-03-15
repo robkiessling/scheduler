@@ -18,7 +18,7 @@ export const SPECIAL_CELLS = {
 // Note: blockGradeIds is accounted for canPutClassInSlot
 export const periods = [
     { id: 'PER 1', timeRange: '8:10 - 8:55', blockGradeIds: [], lunch: false, header: "HOMEROOM 7:55 - 8:10" },
-    { id: 'PER 2', timeRange: '9:00 - 9:45', blockGradeIds: [], lunch: false, header: " " },
+    { id: 'PER 2', timeRange: '9:00 - 9:45', blockGradeIds: [], lunch: false, header: " ", doNotStartArtic: true }, // doNotStartArtic because recess will break up meeting
     { id: 'PER 3', timeRange: '10:05 - 10:50', blockGradeIds: [], lunch: false, header: "RECESS 9:45 - 10:00" },
     { id: 'PER 4', timeRange: '10:55 - 11:40', blockGradeIds: ['P','K','1','2'], lunch: true, header: "LUNCH Lower 11:00 - 11:40 (K,1,2)" },
     { id: 'PER 5', timeRange: '11:45 - 12:25', blockGradeIds: ['3','4','5','6'], lunch: true, header: "LUNCH Upper 11:45 - 12:25 (3,4,5,6)" },

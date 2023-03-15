@@ -12,7 +12,8 @@ let $masterTable, $subjectsTable;
 
 const $errors = $('#errors');
 
-const SHOW_GROUP_INFO = true;
+// keala feedback: both false
+const SHOW_GROUP_INFO = false;
 const REMOVE_TOP_BORDER = false; // removes lightgrey border between cells when SHOW_GROUP_INFO is false
 
 /**

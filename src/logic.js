@@ -100,6 +100,10 @@ function createGradeLevelMeetings() {
  * Returns true if the meeting could be created, returns false if the combination is not possible.
  */
 function createGradeLevelMeeting(grade, dow, period) {
+    if (period.doNotStartArtic) {
+        return false;
+    }
+
     for (let offset = 0; offset <= subjects.length - grade.classIds.length; offset++) {
         let perms = permutations(grade.classIds);
         let group = `Grade ${grade.id}\n ARTIC`;
