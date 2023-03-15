@@ -7,10 +7,10 @@ import {getFormData} from "./form";
 import {defaultDowPriority, defaultPeriodPriority, loadStateFromLocal, saveStateToLocal} from "./state";
 
 export const SPECIAL_CELLS = {
-    OOF: { text: '', fullWidth: true, color: '#aaa' },
-    LUNCH: { text: 'LUNCH', fullWidth: true, color: '#aaa' },
-    EARLY_RELEASE: { text: 'EARLY RELEASE', group: 'EARLY_RELEASE', fullWidth: true, color: '#ddd' },
-    SPECIALS_ARTIC: { text: 'SPECIALS ARTIC', group: 'SPECIALS_ARTIC', fullWidth: true, color: '#D7B5A6' }
+    OOF: { text: '', color: '#aaa' },
+    LUNCH: { text: 'LUNCH', color: '#aaa', borders: false },
+    EARLY_RELEASE: { text: 'EARLY RELEASE', group: 'EARLY_RELEASE', mergeTopAndBottom: true, color: '#ddd' },
+    SPECIALS_ARTIC: { text: 'SPECIALS ARTIC', group: 'SPECIALS_ARTIC', mergeTopAndBottom: true, color: '#D7B5A6' }
 }
 
 // TODO ------------- Move a lot of this stuff to state.js
@@ -18,12 +18,12 @@ export const SPECIAL_CELLS = {
 // Note: blockGradeIds is accounted for canPutClassInSlot
 export const periods = [
     { id: 'PER 1', timeRange: '8:10 - 8:55', blockGradeIds: [], lunch: false, header: "HOMEROOM 7:55 - 8:10" },
-    { id: 'PER 2', timeRange: '9:00 - 9:45', blockGradeIds: [], lunch: false },
+    { id: 'PER 2', timeRange: '9:00 - 9:45', blockGradeIds: [], lunch: false, header: " " },
     { id: 'PER 3', timeRange: '10:05 - 10:50', blockGradeIds: [], lunch: false, header: "RECESS 9:45 - 10:00" },
     { id: 'PER 4', timeRange: '10:55 - 11:40', blockGradeIds: ['P','K','1','2'], lunch: true, header: "LUNCH Lower 11:00 - 11:40 (K,1,2)" },
-    { id: 'Specials Lunch', timeRange: '11:45 - 12:25', blockGradeIds: ['3','4','5','6'], lunch: true, header: "LUNCH Upper 11:45 - 12:25 (3,4,5,6)" },
-    { id: 'PER 5', timeRange: '12:30 - 1:15', blockGradeIds: [], lunch: false },
-    { id: 'PER 6', timeRange: '1:20 - 2:05', blockGradeIds: [], lunch: false },
+    { id: 'PER 5', timeRange: '11:45 - 12:25', blockGradeIds: ['3','4','5','6'], lunch: true, header: "LUNCH Upper 11:45 - 12:25 (3,4,5,6)" },
+    { id: 'PER 6', timeRange: '12:30 - 1:15', blockGradeIds: [], lunch: false, header: " " },
+    { id: 'PER 7', timeRange: '1:20 - 2:05', blockGradeIds: [], lunch: false, header: " " },
 ];
 
 export const dows = [

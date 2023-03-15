@@ -68,6 +68,5 @@ let defaultSubjects = [
 ]
 
 export let defaultDowPriority = [['T','W','R'], ['M','F']];
-export let defaultPeriodPriority = ['PER 5','PER 6','PER 4','PER 3','PER 2','PER 1','Specials Lunch'];
-
+export let defaultPeriodPriority = ['PER 6','PER 7','PER 4','PER 3','PER 2','PER 1','PER 5'];
 

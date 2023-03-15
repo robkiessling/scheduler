@@ -171,7 +171,10 @@ const subjectsList = new EditableList($('#subjects-list'), {
         dows.forEach(dow => {
             let $optGroup = $(`<optgroup label="${dow.name}">`).appendTo($blockTods);
             periods.forEach(period => {
-                $('<option>', { html: period.id, value: writeTodValue(dow.id, period.id) }).appendTo($optGroup);
+                $('<option>', {
+                    html: `${period.id} (${period.timeRange})`,
+                    value: writeTodValue(dow.id, period.id)
+                }).appendTo($optGroup);
             });
         });
 
@@ -185,8 +188,8 @@ const subjectsList = new EditableList($('#subjects-list'), {
         $blockTods.multipleSelect({
             multiple: true,
             minimumCountSelected: 0,
-            dropWidth: 460,
-            multipleWidth: 110,
+            dropWidth: 215,
+            multipleWidth: 160,
             onClick: () => refreshBlockTods(),
             onAfterCreate: () => refreshBlockTods(),
             onOptgroupClick: () => refreshBlockTods(),

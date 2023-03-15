@@ -1,8 +1,8 @@
 
 import $ from "jquery";
 import 'jquery-ui/ui/widgets/tabs.js';
-import {dows, periods, remaining, result, subjects} from "./index";
-import {downloadExcel, tablesToExcel} from "./helpers";
+import {dows, periods, result, subjects} from "./index";
+import {downloadExcel} from "./helpers";
 
 
 const $output = $('#outputs');
@@ -13,6 +13,7 @@ let $masterTable, $subjectsTable;
 const $errors = $('#errors');
 
 const SHOW_GROUP_INFO = true;
+const REMOVE_TOP_BORDER = false; // removes lightgrey border between cells when SHOW_GROUP_INFO is false
 
 /**
  * We have to manually apply styles in order for Excel export to work (cannot use CSS classes)
@@ -21,6 +22,7 @@ const SHOW_GROUP_INFO = true;
 const DOW_FULL_WIDTH = 'width:130px;';
 const DOW_HALF_WIDTH = 'width:50px;';
 const PERIOD_HEADER_COLOR = 'moccasin';
+const EMPTY_PERIOD_HEADER_COLOR = '#aaa';
 const PERIOD_WIDTH = 'width:90px;';
 
 // In general, we only apply bottom and right borders, because those have priority over top and left.
@@ -138,7 +140,8 @@ function renderMasterSchedule($table) {
             $tr = $('<tr>', {}).appendTo($tbody);
             $('<td>', {
                 html: period.header,
-                style: `${bgColor(PERIOD_HEADER_COLOR)}${ALIGN_CENTER}${BOTTOM_BORDER}${LEFT_BORDER}${RIGHT_BORDER}`,
+                style: `${bgColor(period.header.trim().length ? PERIOD_HEADER_COLOR : EMPTY_PERIOD_HEADER_COLOR)}` +
+                    `${ALIGN_CENTER}${BOTTOM_BORDER}${LEFT_BORDER}${RIGHT_BORDER}`,
                 colspan: 2 + (SHOW_GROUP_INFO ? dows.length * 2 : dows.length)
             }).appendTo($tr);
         }
@@ -176,19 +179,19 @@ function renderMasterSchedule($table) {
                 } = groupInfo(cell, dowIndex, periodIndex, subjectIndex);
 
                 let cellStyle = style;
-                if (!SHOW_GROUP_INFO && isGroup && !cell.fullWidth) {
+                if (!SHOW_GROUP_INFO && isGroup && !cell.mergeTopAndBottom) {
                     cellStyle += BOLD;
                 }
 
-                // Special case - for groups that also take up fullWidth (e.g. EARLY_RELEASE, SPECIALS_ARTIC)
-                if (isGroup && cell.fullWidth) {
+                // Special case - for groups that merge adjacent cells (e.g. EARLY_RELEASE, SPECIALS_ARTIC)
+                if (isGroup && cell.mergeTopAndBottom) {
                     if (startOfGroup) {
                         $('<td>', {
                             html: cell ? cell.text : '',
                             // Note: LEFT_BORDER is required due to rowspan
                             style: `${cellStyle}${RIGHT_BORDER}${LEFT_BORDER}${bgColor(cell ? cell.color : '')}` +
                                 `${groupReachesEndOfPeriod ? BOTTOM_BORDER : ''}`,
-                            colspan: cell && cell.fullWidth && SHOW_GROUP_INFO ? 2 : undefined,
+                            colspan: SHOW_GROUP_INFO ? 2 : undefined,
                             rowspan: groupSize
                         }).appendTo($tr);
                     }
@@ -197,17 +200,12 @@ function renderMasterSchedule($table) {
                 }
 
                 if (SHOW_GROUP_INFO) {
-                    // If showing group info, we first always create a normal <td> for the cell
-                    $('<td>', {
-                        html: cell ? cell.text : '',
-                        style: `${cellStyle}${bgColor(cell ? cell.color : '')}${cell && cell.fullWidth ? RIGHT_BORDER : ''}`,
-                        colspan: cell && cell.fullWidth ? 2 : undefined
-                    }).appendTo($tr);
-                    
-                    if (cell && cell.fullWidth) { return; }
-                    
-                    // Then, if the cell is a group, we create a 2nd <td> for the group info
                     if (isGroup) {
+                        $('<td>', {
+                            html: cell ? cell.text : '',
+                            style: `${cellStyle}${bgColor(cell ? cell.color : '')}`,
+                        }).appendTo($tr);
+
                         if (startOfGroup) {
                             $('<td>', {
                                 html: cell.group,
@@ -216,18 +214,23 @@ function renderMasterSchedule($table) {
                                 rowspan: groupSize
                             }).appendTo($tr);
                         }
-                        // Only create cell for startOfGroup since it spans all of the rows
-                        return;
                     }
-
-                    // If cell isn't a group, we simply leave the 2nd <td> blank
-                    $('<td>', { html: '', style: `${style}${RIGHT_BORDER}`}).appendTo($tr);
+                    else {
+                        $('<td>', {
+                            html: cell ? cell.text : '',
+                            style: `${cellStyle}${bgColor(cell ? cell.color : '')}${RIGHT_BORDER}` +
+                                `${cell && cell.borders ? `${TOP_BORDER}${BOTTOM_BORDER}` : ''}`,
+                            colspan: 2
+                        }).appendTo($tr);
+                    }
                 }
                 else {
                     // If not showing group info, we just create a normal <td> for the cell
                     $('<td>', {
                         html: cell ? cell.text : '',
-                        style: `${cellStyle}${bgColor(cell ? cell.color : '')}${RIGHT_BORDER}`
+                        style: `${cellStyle}${bgColor(cell ? cell.color : '')}${RIGHT_BORDER}` +
+                            `${cell && cell.borders ? `${TOP_BORDER}${BOTTOM_BORDER}` : ''}` +
+                            `${!(cell && cell.borders) && REMOVE_TOP_BORDER ? 'border-top:none;' : ''}`
                     }).appendTo($tr);
                 }
             })
@@ -275,7 +278,8 @@ function mergeSubjectSchedule($tbody, subject) {
             $tr = $('<tr>', {}).appendTo($tbody);
             $('<td>', {
                 html: period.header,
-                style: `${bgColor(PERIOD_HEADER_COLOR)}${ALIGN_CENTER}${BOTTOM_BORDER}${LEFT_BORDER}${RIGHT_BORDER}`,
+                style: `${bgColor(period.header.trim().length ? PERIOD_HEADER_COLOR : EMPTY_PERIOD_HEADER_COLOR)}` +
+                    `${ALIGN_CENTER}${BOTTOM_BORDER}${LEFT_BORDER}${RIGHT_BORDER}`,
                 colspan: 1 + dows.length
             }).appendTo($tr);
         }

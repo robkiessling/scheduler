@@ -17,11 +17,11 @@ export function layoutSchedule() {
 }
 
 /**
- * School ends early on Wednesday, so we mark its period 6 as "early release"
+ * School ends early on Wednesday, so we mark its final as "early release"
  */
 function createEarlyReleaseDay() {
     let dowIndex = dowLookup['W'].index;
-    let periodIndex = periodLookup['PER 6'].index;
+    let periodIndex = periods.length - 1;
     subjects.forEach((subject, subjectIndex) => {
         result[dowIndex][periodIndex][subjectIndex] = SPECIAL_CELLS.EARLY_RELEASE;
     });
