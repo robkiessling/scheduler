@@ -142,7 +142,6 @@ const subjectsList = new EditableList($('#subjects-list'), {
                 tod.periodIds.forEach(periodId => tods.push(writeTodValue(tod.dowId, periodId)));
             }
         });
-        console.log(tods);
         rowData.blockTods = tods;
 
         return rowData;
@@ -186,7 +185,7 @@ const subjectsList = new EditableList($('#subjects-list'), {
         $blockTods.multipleSelect({
             multiple: true,
             minimumCountSelected: 0,
-            dropWidth: 450,
+            dropWidth: 460,
             multipleWidth: 110,
             onClick: () => refreshBlockTods(),
             onAfterCreate: () => refreshBlockTods(),

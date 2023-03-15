@@ -190,7 +190,7 @@ function renderMasterSchedule($table) {
                     cellStyle += BOLD;
                 }
 
-                // Special case - for groups that also take up fullWidth (e.g. EARLY_RELEASE, EVENTS)
+                // Special case - for groups that also take up fullWidth (e.g. EARLY_RELEASE, SPECIALS_ARTIC)
                 if (isGroup && cell.fullWidth) {
                     if (startOfGroup) {
                         $('<td>', {

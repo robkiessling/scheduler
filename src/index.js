@@ -9,7 +9,7 @@ export const SPECIAL_CELLS = {
     OOF: { text: '', fullWidth: true, color: '#aaa' },
     LUNCH: { text: 'LUNCH', fullWidth: true, color: '#aaa' },
     EARLY_RELEASE: { text: 'EARLY RELEASE', group: 'EARLY_RELEASE', fullWidth: true, color: '#ddd' },
-    EVENTS: { text: 'EVENTS', group: 'EVENTS', fullWidth: true, color: '#ddd' }
+    SPECIALS_ARTIC: { text: 'SPECIALS ARTIC', group: 'SPECIALS_ARTIC', fullWidth: true, color: '#D7B5A6' }
 }
 
 // Note: blockGradeIds is accounted for canPutClassInSlot
@@ -32,15 +32,27 @@ export const dows = [
 ]
 
 let initialGrades = [
-    { id: 'P', color: '#568ef2', classIds: ['P1'] },
+    { id: 'P', color: '#568ef2', classIds: ['A3'] },
     { id: 'K', color: '#E06666', classIds: ['A1', 'A4', 'A5', 'A6'] },
     { id: '1', color: '#FFD966', classIds: ['C2', 'C3', 'C4', 'C5'] },
     { id: '2', color: '#FF9900', classIds: ['B2', 'B3', 'B4', 'B5'] },
     { id: '3', color: '#93C47D', classIds: ['B24', 'B25', 'B26'] },
     { id: '4', color: '#C38CDB', classIds: ['C24', 'C25', 'C26'] },
-    { id: '5', color: '#EAD1DC', classIds: ['C21', 'C22', 'C23', 'B21'] },
-    { id: '6', color: '#00FFFF', classIds: ['B22', 'B23'] },
+    { id: '5', color: '#EAD1DC', classIds: ['C21', 'C22', 'C23', 'C1'] },
+    { id: '6', color: '#00FFFF', classIds: ['B21', 'B22'] },
 ];
+
+/** alternate colors */
+// let initialGrades = [
+//     { id: 'P', color: '#81acdb', classIds: ['A3'] },
+//     { id: 'K', color: '#E15759', classIds: ['A1', 'A4', 'A5', 'A6'] },
+//     { id: '1', color: '#EDC948', classIds: ['C2', 'C3', 'C4', 'C5'] },
+//     { id: '2', color: '#F28E2B', classIds: ['B2', 'B3', 'B4', 'B5'] },
+//     { id: '3', color: '#59A14F', classIds: ['B24', 'B25', 'B26'] },
+//     { id: '4', color: '#B07AA1', classIds: ['C24', 'C25', 'C26'] },
+//     { id: '5', color: '#FF9DA7', classIds: ['C21', 'C22', 'C23', 'C1'] },
+//     { id: '6', color: '#76B7B2', classIds: ['B21', 'B22'] },
+// ];
 
 // Note: blockTods is accounted for in result, blockGradeIds accounted for in remaining
 let initialSubjects = [
@@ -50,7 +62,7 @@ let initialSubjects = [
     { id: 'PE', blockTods: [], blockGradeIds: [] },
     { id: 'LIBRARY', blockTods: [], blockGradeIds: [] },
     { id: 'LANGUAGE', blockTods: [], blockGradeIds: [] },
-    { id: 'SPECIAL', blockTods: ['F'], blockGradeIds: [] },
+    { id: 'SPECIAL', blockTods: [], blockGradeIds: [] },
 ]
 
 let initialDowPriority = [['T','W','R'], ['M','F']];

@@ -10,8 +10,8 @@ import {permutations, shuffleArray} from "./helpers";
 
 export function layoutSchedule() {
     createEarlyReleaseDay();
-    createEventsPeriod();
     createGradeLevelMeetings();
+    createSpecialsMeeting();
     randomizeRemaining();
     markLunchPeriods();
 }
@@ -28,14 +28,32 @@ function createEarlyReleaseDay() {
 }
 
 /**
- * Reserve period 6 on fridays for events
+ * Need one period per week reserved for specials teachers to meet
  */
-function createEventsPeriod() {
-    let dowIndex = dowLookup['F'].index;
-    let periodIndex = periodLookup['PER 6'].index;
-    subjects.forEach((subject, subjectIndex) => {
-        result[dowIndex][periodIndex][subjectIndex] = SPECIAL_CELLS.EVENTS;
-    });
+function createSpecialsMeeting() {
+    let meetingCreated = false;
+    iterateDows(dow => {
+        if (meetingCreated) { return; }
+
+        iteratePeriods(period => {
+            if (meetingCreated) { return; }
+            if (period.lunch) { return; }
+
+            let canHaveMeeting = true;
+            iterateSubjects(subject => {
+                if (result[dow.index][period.index][subject.index] !== null) {
+                    canHaveMeeting = false;
+                }
+            });
+
+            if (canHaveMeeting) {
+                subjects.forEach((subject, subjectIndex) => {
+                    result[dow.index][period.index][subjectIndex] = SPECIAL_CELLS.SPECIALS_ARTIC;
+                });
+                meetingCreated = true;
+            }
+        });
+    })
 }
 
 /**
