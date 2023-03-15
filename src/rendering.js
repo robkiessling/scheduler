@@ -343,7 +343,7 @@ export function renderErrors(errors) {
 
     if (errors.length) {
         $('<p>', {
-            html: 'Errors found:'
+            html: `<b>${errors.length} errors occurred:</b>`
         }).appendTo($errors);
 
         errors.forEach(error => {

@@ -2,17 +2,17 @@ import $ from "jquery";
 import 'jquery-ui/ui/widgets/sortable.js';
 import 'multiple-select/dist/multiple-select.js';
 
-import {dows, generateN, grades, periods} from "./index";
+import {dows, generateN, grades, initGrades, periods} from "./index";
 
 export function loadForm(data) {
+    initGrades(data.grades);
+
     if (data.grades) {
         gradesList.load(data.grades);
     }
     if (data.subjects) {
         subjectsList.load(data.subjects);
     }
-
-    generateN(2);
 }
 
 export function getFormData() {
@@ -199,6 +199,7 @@ const subjectsList = new EditableList($('#subjects-list'), {
         $blockGradeIds.multipleSelect({
             multiple: true,
             minimumCountSelected: 100,
+            dropWidth: 120,
             displayValues: true
         });
     },
