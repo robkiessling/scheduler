@@ -140,6 +140,10 @@ export function isRemaining(gradeId, subjectId, classId) {
     return remaining[remainingKey(gradeId, subjectId, classId)] !== undefined;
 }
 export function removeRemaining(gradeId, subjectId, classId) {
+    const key = remainingKey(gradeId, subjectId, classId)
+    if (remaining[key] === undefined) {
+        console.warn(`Trying to remove ${key} from remaining set but it is not there`);
+    }
     delete remaining[remainingKey(gradeId, subjectId, classId)]
 }
 export function addRemaining(gradeId, subjectId, classId) {
@@ -268,4 +272,4 @@ export function generateN(n = 1) {
 }
 
 loadStateFromLocal();
-generateN(2);
+generateN(1);

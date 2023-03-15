@@ -1,3 +1,4 @@
+import $ from "jquery";
 import {
     SPECIAL_CELLS,
     result,
@@ -155,30 +156,103 @@ function removePermutation(permutation, offset, dow, periodIndex) {
 }
 
 function randomizeRemaining() {
-    // TODO Option: Give P and 6 lowest priority for SPECIAL
-
     // Random order:
-    let remainingArray = Object.values(remaining);
-    shuffleArray(remainingArray);
-    remainingArray.forEach(remains => putClassInNextOpenSlot(classLookup[remains.class]));
+    // todo this makes long sequences where a class will be in specials 4+ times in a row
+    // shuffleArray(Object.values(remaining)).forEach(remains => putClassInNextAdjSlot(remains.class, remains.subject));
+    // shuffleArray(Object.values(remaining)).forEach(remains => putClassInNextOpenSlot(remains.class, remains.subject));
 
-    // Try to keep grades together:
+    /**
+     * For each subject, try to use the same grade for consecutive periods. That way the teacher can teach as many
+     * classes from the same grade in a row as possible (doesn't have to change curriculum as often).
+     *
+     * Implemented by first randomly assigning classes from each grade throughout the schedule. These random assignments
+     * act as seed nodes. Once a certain number of seeds have been set, then we only lay out classes in spots adjacent
+     * to the seeds (the grade must match seed's grade). Once adjacent spots are all taken, randomly assign the rest.
+     */
+    let numSeedsPerGrade = {};
+    const MAX_SEEDS = 5; // number of seeds to plant per grade.
     // Object.values(remaining).sort((a, b) => {
     //     return a.grade.localeCompare(b.grade) || a.subject.localeCompare(b.subject) || a.class.localeCompare(b.class);
-    // }).forEach(remains => {
-    //     putClassInNextOpenSlot(classLookup[remains.class]);
-    // });
+    // })
+    shuffleArray(Object.values(remaining)).forEach(remains => {
+        if (numSeedsPerGrade[remains.grade] === undefined) {
+            putClassInRandomSlot(remains.class, remains.subject);
+            numSeedsPerGrade[remains.grade] = 1;
+        }
+        else if (numSeedsPerGrade[remains.grade] < MAX_SEEDS) {
+            putClassInRandomSlot(remains.class, remains.subject);
+            numSeedsPerGrade[remains.grade] += 1;
+        }
+        else {
+            putClassInNextAdjSlot(remains.class, remains.subject);
+        }
+    });
+
+    shuffleArray(Object.values(remaining)).forEach(remains => putClassInNextOpenSlot(remains.class, remains.subject));
 }
 
-function putClassInNextOpenSlot(klass) {
+// Looks for an open slot that is in the adjacent period to a class with the same subject and grade
+function putClassInNextAdjSlot(classId, subjectId) {
+    const klass = classLookup[classId];
+    const subject = subjectLookup[subjectId];
+
     iterateDows(dow => {
         return iteratePeriods(period => {
-            return iterateSubjects(subject => {
-                if (canPutClassInSlot(klass, dow, period, subject)) {
-                    putClassInSlot(klass, dow, period, subject);
-                    return false; // Break early
-                }
-            });
+            // todo not allowing adj assignment to lowest priority period
+            if (period.id === periodPriority[periodPriority.length - 1]) { return; }
+
+            if (canPutClassInSlot(klass, dow, period, subject) && isAdjToSameGrade(klass, dow, period, subject)) {
+                console.log('found adj for: ', klass.id, dow.id, period.id, subject.id);
+                putClassInSlot(klass, dow, period, subject);
+                return false; // Break early
+            }
+        })
+    });
+}
+
+function isAdjToSameGrade(klass, dow, period, subject) {
+    let found = false;
+    [period.index + 1, period.index - 1].forEach(adjPeriodIndex => {
+        if (found) { return; }
+        if (adjPeriodIndex < 0 || adjPeriodIndex >= periods.length) { return; } // adj slot is out of bounds
+
+        let adjCell = result[dow.index][adjPeriodIndex][subject.index];
+        // if (adjCell && adjCell.group) { return; }
+
+        if (adjCell && adjCell.classId && classLookup[adjCell.classId].gradeId === klass.gradeId) {
+            found = true;
+        }
+    });
+    return found;
+}
+
+function putClassInRandomSlot(classId, subjectId) {
+    const klass = classLookup[classId];
+    const subject = subjectLookup[subjectId];
+
+    iterateRandomly(dowPriority, dowLookup, dow => {
+        return iterateRandomly(periodPriority, periodLookup, period => {
+            // todo not allowing random assignment to lowest priority period
+            if (period.id === periodPriority[periodPriority.length - 1]) { return; }
+
+            if (canPutClassInSlot(klass, dow, period, subject)) {
+                putClassInSlot(klass, dow, period, subject);
+                return false; // Break early
+            }
+        });
+    });
+}
+
+function putClassInNextOpenSlot(classId, subjectId) {
+    const klass = classLookup[classId];
+    const subject = subjectLookup[subjectId];
+
+    iterateDows(dow => {
+        return iteratePeriods(period => {
+            if (canPutClassInSlot(klass, dow, period, subject)) {
+                putClassInSlot(klass, dow, period, subject);
+                return false; // Break early
+            }
         })
     });
 }
@@ -285,18 +359,22 @@ function iteratePriorityQueue(priorities, lookup, callback) {
     }
 }
 
+function iterateRandomly(priorities, lookup, callback) {
+    return iteratePriorityQueue(shuffleArray($.extend(true, [], priorities)), lookup, callback);
+}
+
 function iterateGrades(callback) {
-    iteratePriorityQueue(gradePriority, gradeLookup, callback);
+    return iteratePriorityQueue(gradePriority, gradeLookup, callback);
 }
 
 function iterateDows(callback) {
-    iteratePriorityQueue(dowPriority, dowLookup, callback);
+    return iteratePriorityQueue(dowPriority, dowLookup, callback);
 }
 
 function iteratePeriods(callback) {
-    iteratePriorityQueue(periodPriority, periodLookup, callback);
+    return iteratePriorityQueue(periodPriority, periodLookup, callback);
 }
 
 function iterateSubjects(callback) {
-    iteratePriorityQueue(subjectPriority, subjectLookup, callback);
+    return iteratePriorityQueue(subjectPriority, subjectLookup, callback);
 }

@@ -23,7 +23,7 @@ export function getFormData() {
 }
 
 $('#generate').off('click').on('click', () => {
-    generateN(2);
+    generateN(1);
 });
 
 
