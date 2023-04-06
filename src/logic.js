@@ -11,7 +11,8 @@ import {permutations, shuffleArray} from "./helpers";
 
 export function layoutSchedule() {
     createEarlyReleaseDay();
-    createGradeLevelMeetings();
+    createGradeArticMtgs();
+    createGradeTeamMtgs();
     // createSpecialsMeeting();
     randomizeRemaining();
     markLunchPeriods();
@@ -60,8 +61,9 @@ function createSpecialsMeeting() {
 /**
  * Every grade level needs to find 2 consecutive periods where all classes for the grade are active
  * (this allows the teachers in that grade to meet with each other for 2 hours per week).
+ * This is known as an articulation period.
  */
-function createGradeLevelMeetings() {
+function createGradeArticMtgs() {
     iterateGrades(grade => {
         // Must have at least 2 different classes to hold grade level meetings
         if (grade.classIds.length <= 1) {
@@ -76,14 +78,44 @@ function createGradeLevelMeetings() {
             iteratePeriods(period => {
                 if (meetingCreated) { return; }
 
-                meetingCreated = createGradeLevelMeeting(grade, dow, period);
+                meetingCreated = createGradeArticMtg(grade, dow, period);
             });
         });
         
         if (!meetingCreated) {
-            console.error(`Could not find a grade-level meeting for grade ${grade.id}`);
+            console.error(`Could not find a grade-level artic meeting for grade ${grade.id}`);
         }
-    })
+    });
+}
+
+/**
+ * Every grade level needs 1 period where all classes for the grade are active
+ * (this allows the teachers in that grade to meet with each other).
+ * This is known as the team meeting period. This does NOT have to be consecutive with the articulation period.
+ */
+function createGradeTeamMtgs() {
+    iterateGrades(grade => {
+        // Must have at least 2 different classes to hold grade level meetings
+        if (grade.classIds.length <= 1) {
+            return;
+        }
+
+        let meetingCreated = false;
+
+        iterateDows(dow => {
+            if (meetingCreated) { return; }
+
+            iteratePeriods(period => {
+                if (meetingCreated) { return; }
+
+                meetingCreated = createGradeTeamMtg(grade, dow, period);
+            });
+        });
+
+        if (!meetingCreated) {
+            console.error(`Could not find a grade-level team meeting for grade ${grade.id}`);
+        }
+    });
 }
 
 /**
@@ -100,7 +132,7 @@ function createGradeLevelMeetings() {
  *
  * Returns true if the meeting could be created, returns false if the combination is not possible.
  */
-function createGradeLevelMeeting(grade, dow, period) {
+function createGradeArticMtg(grade, dow, period) {
     if (period.doNotStartArtic) {
         return false;
     }
@@ -126,6 +158,22 @@ function createGradeLevelMeeting(grade, dow, period) {
             }
         }
     }
+    return false;
+}
+
+function createGradeTeamMtg(grade, dow, period) {
+    for (let offset = 0; offset <= subjects.length - grade.classIds.length; offset++) {
+        let perms = permutations(grade.classIds);
+        let group = `Grade ${grade.id}\n TEAM`;
+
+        for (let i = 0; i < perms.length; i++) {
+            if (permutationMatches(perms[i], offset, dow, period.index)) {
+                applyPermutation(perms[i], offset, dow, period.index, group);
+                return true;
+            }
+        }
+    }
+
     return false;
 }
 

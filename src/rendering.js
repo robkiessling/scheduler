@@ -50,7 +50,10 @@ export function renderSchedules() {
     $('<ul>', { id: "output-tabs" }).appendTo($output);
 
     let $masterTable = createTab(`output-tab-master`, 'Master Schedule').$table;
-    renderMasterSchedule($masterTable);
+    renderMasterSchedule($masterTable, false);
+
+    let $masterTableAlt = createTab(`output-tab-master-alt`, 'Master Schedule (Alt)').$table;
+    renderMasterSchedule($masterTableAlt, true);
 
     let $subjectsTable = createTab(`output-tab-subjects`, 'By Subject').$table;
     renderAllSubjectsSchedule($subjectsTable);
@@ -132,7 +135,7 @@ function addPeriodHeader($tbody, period, colspan, showEmptyHeaders = true) {
     }
 }
 
-function renderMasterSchedule($table) {
+function renderMasterSchedule($table, showGroupInfo) {
     // -------------------------------------------- <thead> element
     const $thead = $('<thead>').appendTo($table);
     let $tr = $('<tr>').appendTo($thead);
@@ -148,7 +151,7 @@ function renderMasterSchedule($table) {
         $('<th>', {
             html: dow.name,
             style: `${DOW_FULL_WIDTH}${ALIGN_CENTER}${RIGHT_BORDER}${BOTTOM_BORDER}${TOP_BORDER}`,
-            colspan: SHOW_GROUP_INFO ? 2 : 1
+            colspan: showGroupInfo ? 2 : 1
         }).appendTo($tr);
     })
 
@@ -156,7 +159,7 @@ function renderMasterSchedule($table) {
     const $tbody = $('<tbody>').appendTo($table);
     periods.forEach((period, periodIndex) => {
         // -------------------------------------------- period header row
-        addPeriodHeader($tbody, period, 2 + (SHOW_GROUP_INFO ? dows.length * 2 : dows.length));
+        addPeriodHeader($tbody, period, 2 + (showGroupInfo ? dows.length * 2 : dows.length));
 
         // -------------------------------------------- normal subject rows
         subjects.forEach((subject, subjectIndex) => {
@@ -191,7 +194,7 @@ function renderMasterSchedule($table) {
                 } = groupInfo(cell, dowIndex, periodIndex, subjectIndex);
 
                 let cellStyle = style;
-                if (!SHOW_GROUP_INFO && isGroup && !cell.mergeTopAndBottom) {
+                if (isGroup && !cell.mergeTopAndBottom) {
                     cellStyle += BOLD;
                 }
 
@@ -203,7 +206,7 @@ function renderMasterSchedule($table) {
                             // Note: LEFT_BORDER is required due to rowspan
                             style: `${cellStyle}${RIGHT_BORDER}${LEFT_BORDER}${bgColor(cell ? cell.color : '')}` +
                                 `${groupReachesEndOfPeriod ? BOTTOM_BORDER : ''}`,
-                            colspan: SHOW_GROUP_INFO ? 2 : undefined,
+                            colspan: showGroupInfo ? 2 : undefined,
                             rowspan: groupSize
                         }).appendTo($tr);
                     }
@@ -211,7 +214,7 @@ function renderMasterSchedule($table) {
                     return;
                 }
 
-                if (SHOW_GROUP_INFO) {
+                if (showGroupInfo) {
                     if (isGroup) {
                         $('<td>', {
                             html: cell ? cell.text : '',
