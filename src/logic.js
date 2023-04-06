@@ -12,7 +12,7 @@ import {permutations, shuffleArray} from "./helpers";
 export function layoutSchedule() {
     createEarlyReleaseDay();
     createGradeLevelMeetings();
-    createSpecialsMeeting();
+    // createSpecialsMeeting();
     randomizeRemaining();
     markLunchPeriods();
 }

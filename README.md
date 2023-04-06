@@ -18,8 +18,8 @@ different ways of viewing the generated schedule. In the Master Schedule, articu
 periods are shown using bold font (see next section for more info on articulation periods). 
 
 There are a lot of random components involved when generating a schedule, such as the order
-in which the subjects are assigned, as well as the classes. As such, each time you click the
-`Generate` button, a different schedule will be created (but still adhering to the desired
+in which the subjects and classes are assigned. As such, each time you click the
+`Generate` button a different schedule will be created (but still adhering to the desired
 configuration). A common way to use this tool is to keep regenerating the schedule
 until you see one that looks satisfactory. 
 
